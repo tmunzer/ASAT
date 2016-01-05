@@ -1,0 +1,16 @@
+{
+  "main": "./index.html",
+  "name": "ASAT",
+  "version": "0.1.1",
+  "window": {
+    "title": "Aerohive Stand Alone Tool",
+    "toolbar": false,
+    "width": 800,
+    "height": 600,
+    "resizable": false,
+    "icon": "./images/aerohive_icon.gif"
+  },
+  "dependencies": {
+    "sqlite3": "~3.1.1"
+  }
+}

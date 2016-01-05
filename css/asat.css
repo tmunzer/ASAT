@@ -1,0 +1,240 @@
+html {
+    background-color: #222222;
+
+}
+
+body {
+    background-color: transparent;
+    color: #adadad;
+    width: 100%;
+}
+/*============================================== /
+/ ==================== HEADER=================== /
+/ ============================================== */
+header {
+    position: fixed;
+    border-bottom: 1px solid #E6C200;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 50px;
+    background-color: #222222;
+    box-shadow: 0 10px 20px 0 rgba(0,0,0,0.2);
+    z-index: 1;
+}
+header #logo {
+    height: 50px;
+    padding: 10px;
+    position: absolute;
+    left: 5px;
+}
+header #asat {
+    position: absolute;
+    top: 25px;
+    right: 10px;
+}
+/*============================================== /
+/ ===================== NAV ==================== /
+/ ============================================== */
+nav {
+    position: fixed;
+    left: 0;
+    top: 50px;
+    background-color: #222222;
+    border-radius: 0;
+    width: 180px;
+    float: left;
+    display: inline;
+    margin: 0;
+    padding: 0;
+}
+
+nav a:hover {
+    color: #222222;
+    border-radius: 0;
+
+}
+
+nav a.selected {
+    border-radius: 0;
+    color: #222222;
+    background-color: white;
+    /*box-shadow: 50px 0 50px 0 rgba(200,200,200,0.1);*/
+
+}
+
+nav a {
+    display: block;
+    color: white;
+    border-radius: 0;
+}
+
+/*============================================== /
+/ ================== SECTION== ================= /
+/ ============================================== */
+
+section {
+    padding-left: 210px;
+    padding-top: 60px;
+    padding-bottom: 50px;
+}
+
+img {
+    padding: 1em;
+}
+
+nav.main {
+    width: 100%;
+    border: 0px !important;
+}
+
+.main.console {
+    margin-bottom: 160px;
+}
+
+nav p {
+    font-size: 0.7em;
+    margin: auto;
+}
+
+aside {
+    background-color: white;
+}
+/*============================================== /
+/ =================== ACTION =================== /
+/ ============================================== */
+article.action {
+    position: relative;
+    width: 100%;
+    padding-top: 50px;
+    padding-left: 70px;
+    padding-right: 70px;
+}
+article.action.console {
+}
+.back {
+    float: left;
+}
+.next {
+    float: right;
+}
+/*============================================== /
+/ ================= BREADCRUMB ================= /
+/ ============================================== */
+.breadcrumb-table {
+    width: 95%;
+    padding: 1em 0;
+    margin: 2em auto;
+    font-weight: normal;
+    text-align: center;
+    position: relative;
+}
+.breadcrumb-row {
+    width: 100%;
+    position: relative;
+}
+.breadcrumb-row:after {
+    content: "";
+    z-index: -1;
+    width: 78%;
+    left: 10%;
+    top: 75%;
+    height: 0;
+    position: absolute;
+    border-top: 1px solid white;
+}
+.breadcrumb-row i {
+
+    position: relative;
+    background-color: #222222;
+    color: white;
+}
+/*============================================== /
+/ ================== FIREWALL ================== /
+/ ============================================== */
+.firewall-test-result {
+    text-align: center;
+}
+/*============================================== /
+/ ================= lIST-GROUP ================= /
+/ ============================================== */
+.list-group {
+    width: 80%;
+    margin: auto;
+}
+
+.list-group-item.active:hover {
+    background-color: #222222 !important;
+    border-color: #111111 !important;
+    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.125) inset;
+}
+.list-group-item:hover .list-group-item-heading,
+.list-group-item:hover .list-group-item-text,
+.list-group-item.active:hover .list-group-item-heading,
+.list-group-item.active:hover .list-group-item-text{
+    color: #ffffff !important;
+}
+.list-group-item {
+    background-color: #ffffff !important;
+    border: 1px solid transparent !important;
+}
+.list-group-item .list-group-item-heading, .list-group-item .list-group-item-text {
+    color: #333333 !important;
+
+}
+.list-group-item:hover,
+.list-group-item.active {
+    background-color: #333333 !important;
+    border-color: #111111 !important;
+    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.125) inset;
+}
+.list-group-item.active .list-group-item-heading, .list-group-item.active .list-group-item-text{
+    color: #ffffff !important;
+}
+
+/*============================================== /
+/ =================== FOOTER =================== /
+/ ============================================== */
+footer {
+    bottom: 0;
+    left: 0;
+    position:fixed;
+}
+
+footer a, footer a:-webkit-any-link {
+    position: fixed;
+    left: 0;
+    color: black;
+    padding: 2px;
+    font-size: 0.8em;
+    background-color: #ccc;
+    text-decoration: none;
+}
+
+footer a:hover {
+    background-color: #222222;
+    color: white;
+    text-decoration: none;
+}
+
+footer.console a {
+    bottom: 165px;
+}
+footer.no-console a {
+    bottom: 0;
+}
+#console {
+    position: fixed;
+    left: 0;
+    width: 100%;
+    height: 165px;
+    background-color: rgba(255,255,255,0.95);
+    overflow-y: auto;
+
+}
+#console.console {
+    bottom: 0;
+}
+#console.no-console {
+    bottom: -165px;
+}

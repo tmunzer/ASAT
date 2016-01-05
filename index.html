@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <link type="text/css" rel='stylesheet' href='./css/bootstrap.min.css'>
+    <link type="text/css" rel="stylesheet" href="./css/font-awesome.min.css">
+    <script type="text/javascript" src='./js/jquery.min.js'></script>
+    <script type="text/javascript" src='./js/bootstrap.min.js'></script>
+    <link rel="stylesheet" href="./css/asat.css"/>
+</head>
+<script>
+    // var generate = require("jade").compile
+</script>
+<body>
+<!-- ============================================ -->
+<!-- ================= HEADER =================== -->
+<!-- ============================================ -->
+<header>
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div>
+            <span>
+                <img id="logo" src="images/aerohive_logo.png">
+            </span>
+            <span id="asat">
+                <span>Aerohive Stand Alone Tool v0.1.1</span>
+            </span>
+    </div>
+</header>
+<!-- ============================================ -->
+<!-- ==================== NAV =================== -->
+<!-- ============================================ -->
+<nav class="ui-content">
+    <div>
+        <ul class="nav nav-pills nav-stacked">
+            <li>
+                <a href="#" onclick="main('home')" id="home-button" class="main-button selected">
+                            <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle-thin fa-stack-2x"></i>
+                              <i class="fa fa-home fa-stack-1x "></i>
+                            </span>
+                    Home
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="main('firewall')" id="firewall-button" class="main-button">
+                            <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle-thin fa-stack-2x"></i>
+                              <i class="fa fa-medkit fa-stack-1x "></i>
+                            </span>
+                    Troubleshooting
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="main('deployement')" id="deployement-button" class="main-button">
+                            <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle-thin fa-stack-2x"></i>
+                              <i class="fa fa-cog fa-stack-1x "></i>
+                            </span>
+                    Deployement
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="main('survey')" id="survey-button" class="main-button">
+                            <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle-thin fa-stack-2x"></i>
+                              <i class="fa fa-street-view fa-stack-1x "></i>
+                            </span>
+                    Site Survey
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="main('info')" id="info-button" class="main-button" >
+                            <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle-thin fa-stack-2x"></i>
+                              <i class="fa fa-info fa-stack-1x "></i>
+                            </span>
+                    Info
+                </a>
+            </li>
+            <li>
+                <a href="#"  onclick="main('update')"id="update-button" class="main-button" disabled="disabled">
+                            <span class="fa-stack fa-lg">
+                              <i class="fa fa-circle-thin fa-stack-2x"></i>
+                              <i class="fa fa-download fa-stack-1x "></i>
+                            </span>
+                    Update ASAT
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
+<!-- ============================================ -->
+<!-- =============== SECTIONS =================== -->
+<!-- ============================================ -->
+
+<!-- ============================================ -->
+<!-- ==================== HOME ================== -->
+<section class="main no-console" id="home">
+    <article>
+        <h2>Aerohive Stand Alone Tool</h2>
+        <p>This is a Free APP build to help Aerohive partners and customers. This APP is designed to provide helps
+            on site, to:</p>
+        <ul>
+            <li>Troubleshoot connection issues between
+                <ul>
+                    <li>Aerohive Devices and HiveManager 6 Online servers</li>
+                    <li>Aerohive Devices and IDManager services</li>
+                    <li>Aerohive Devices and HiveManager NG Online servers</li>
+                    <li>Aerohive HiveManager 6 and HiveManager NG Onpremise, and Aerohive License server</li>
+                    <li>Aerohive HiveManager 6 and IDManager services</li>
+                </ul>
+            </li>
+            <li>Easily deploy new access points by providing an easy way to :
+                <ul>
+                    <li>Configure Aerohive Devices CAPWAP client</li>
+                    <li>Configure Aerohive Devices IP Address</li>
+                </ul>
+            </li>
+            <li>Quickly configure an Aerohive Access Point in Site Survey mode:
+                <ul>
+                    <li>Broadcasted SSID</li>
+                    <li>Radio parameters</li>
+                    <li>IP address parameters</li>
+                    <li>IPERF parameters</li>
+                </ul>
+            </li>
+        </ul>
+        <h3>NOTICE</h3>
+
+        <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
+            implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
+            for more details.</p>
+
+        <p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General
+            Public License as published by the Free Software Foundation, either version 3 of the License, or (at your
+            option) any later version.</p>
+        </div>
+    </article>
+</section>
+<!-- ============================================ -->
+<!-- =================== FIREWALL =============== -->
+<section class="main no-console" id="firewall" style="display: none">
+    <article>
+        <table class="breadcrumb-table">
+            <tbody>
+            <tr>
+                <td>
+                    <span>Test Type</span>
+                </td>
+                <td>
+                    <span>Service Type</span>
+                </td>
+                <td>
+                    <span>Destinations</span>
+                </td>
+                <td>
+                    <span>Test Results</span>
+                </td>
+            </tr>
+            <tr class="breadcrumb-row">
+                <td>
+                        <i class="fa fa-circle fa-lg firewall-button" id="firewall-test-type"></i>
+                </td>
+                <td>
+                        <i class="fa fa-circle-o fa-lg firewall-button" id="firewall-service"></i>
+                </td>
+                <td>
+                        <i class="fa fa-circle-o fa-lg firewall-button" id="firewall-test-dest"></i>
+                </td>
+                <td>
+                        <i class="fa fa-circle-o fa-lg firewall-button" id="firewall-test-run"></i>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </article>
+    <article id="firewall-test">
+        <div class="list-group">
+            <a href="#" class="list-group-item active">
+                <h4 class="list-group-item-heading">List group item heading</h4>
+
+                <p class="list-group-item-text">...</p>
+            </a>
+            <a href="#" class="list-group-item">
+                <h4 class="list-group-item-heading">List group item heading</h4>
+
+                <p class="list-group-item-text">...</p>
+            </a>
+        </div>
+    </article>
+    <article id="firewall-action" class="action no-console">
+    </article>
+
+</section>
+<!-- ============================================ -->
+<!-- =================== FOOTER ================= -->
+<!-- ============================================ -->
+
+<!-- ============================================ -->
+<!-- =================== CONSOLE ================ -->
+<footer id="console-footer" class="no-console">
+    <a href="#" id="console-button">
+        <i id="fa-console" class="fa fa-angle-down fa-lg"></i>
+        <span>Console</span>
+    </a>
+    <div id="console" name="console" class="no-console"></div>
+</footer>
+<script type="text/javascript" src='js/asat.console.js'></script>
+<script>
+    $("#console-button").click(function () {
+        if ($("#console-footer").hasClass("console")) {
+            $("#console").removeClass("console").addClass("no-console");
+            $("#console-footer").removeClass("console").addClass("no-console");
+            $("#fa-console").removeClass("fa-angle-down").addClass("fa-angle-up");
+            $(".console").removeClass("console").addClass("no-console");
+        } else {
+            $("#console").removeClass("no-console").addClass("console");
+            $("#console-footer").removeClass("no-console").addClass("console");
+            $("#fa-console").removeClass("fa-angle-up").addClass("fa-angle-down");
+            $(".no-console").removeClass("no-console").addClass("console");
+        }
+    })
+</script>
+<!-- ============================================ -->
+<!-- ================= JAVASCRIPT =============== -->
+<!-- ============================================ -->
+
+<!-- ============================================ -->
+<!-- ==================== MAIN ================== -->
+<script>
+    function main(tab) {
+        $(".main").hide();
+        $(".main-button").removeClass("selected");
+        $('#' + tab).show();
+        $('#' + tab + "-button").addClass("selected");
+        switch (tab) {
+            case "firewall":
+                displayFirewallTest();
+                break;
+        }
+    }
+    var asatConsole = new Console();
+    asatConsole.log("All systems are running.");
+
+</script>
+<!-- ============================================ -->
+<!-- ================= FIREWALL ================= -->
+<script type="text/javascript" src='libs/net.udp.js'></script>
+<script type="text/javascript" src='libs/net.tcp.js'></script>
+<script type="text/javascript" src='libs/net.http.js'></script>
+<script type="text/javascript" src='js/asat.firewall.js'></script>
+
+<script>
+    var db = require("./libs/sqlite.main");
+    function displayTest(list) {
+        for (var i in list) {
+            asatConsole.log(list[i].HOST);
+        }
+    }
+    function displayTestType(res) {
+        var htmlString = '<div class="list-group">';
+        var service;
+        for (var i in res) {
+            service = res[i];
+            htmlString += '  <a href="#" class="list-group-item active">' +
+                    '<h4 class="list-group-item-heading">' + service.SERVICE_NAME + '</h4>' +
+                    '<p class="list-group-item-text">...</p>' +
+                    '</a>';
+        }
+        htmlString += '</div>';
+        console.log(htmlString);
+        document.getElementById("firewall-test").innerHTML = htmlString;
+
+    }
+    function firewall_init() {
+        db.Service.getAll(function (err, res) {
+            console.log(res);
+            displayTestType(res);
+        })
+    }
+    $('#UDPtest').click(function () {
+        asatConsole.log("start UDP Test");
+        new UDPTest('rerector.aerohive.com', 12222, asatConsole);
+    });
+    $('#Test').click(function () {
+        asatConsole.log("start TCP Test");
+
+        new HTTPTest('redirector.aerohive.com', 80, "1", asatConsole, function(){
+            asatConsole.error("back");
+        });
+
+    });
+
+</script>
+</body>
+</html>
