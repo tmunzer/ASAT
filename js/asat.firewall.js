@@ -1,9 +1,9 @@
 var db = require("./libs/sqlite.main");
 var testList = [];
 var proxy = {
-    configured: true,
-    host: "10.0.20.36",
-    port: 8080,
+    configured: false,
+    host: "",
+    port: 0,
     auth: false,
     user: "",
     password: ""
