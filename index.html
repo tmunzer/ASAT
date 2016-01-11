@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title></title>
+    <title>Aerohive Stand Alone Tool</title>
     <link type="text/css" rel='stylesheet' href='./css/bootstrap.min.css'>
     <link type="text/css" rel="stylesheet" href="./css/font-awesome.min.css">
     <script type="text/javascript" src='./js/jquery.min.js'></script>
@@ -98,6 +98,7 @@
 <!-- ==================== HOME ================== -->
 <section class="main no-console" id="home">
     <article>
+        <input type="button" id="Test" value="Test"/>
         <h2>Aerohive Stand Alone Tool</h2>
         <p>This is a Free APP build to help Aerohive partners and customers. This APP is designed to provide helps
             on site, to:</p>
@@ -248,50 +249,10 @@
 <!-- ================= FIREWALL ================= -->
 <script type="text/javascript" src='libs/net.udp.js'></script>
 <script type="text/javascript" src='libs/net.tcp.js'></script>
+<script type="text/javascript" src='libs/net.http.code.js'></script>
 <script type="text/javascript" src='libs/net.http.js'></script>
+<script type="text/javascript" src='libs/net.https.js'></script>
 <script type="text/javascript" src='js/asat.firewall.js'></script>
 
-<script>
-    var db = require("./libs/sqlite.main");
-    function displayTest(list) {
-        for (var i in list) {
-            asatConsole.log(list[i].HOST);
-        }
-    }
-    function displayTestType(res) {
-        var htmlString = '<div class="list-group">';
-        var service;
-        for (var i in res) {
-            service = res[i];
-            htmlString += '  <a href="#" class="list-group-item active">' +
-                    '<h4 class="list-group-item-heading">' + service.SERVICE_NAME + '</h4>' +
-                    '<p class="list-group-item-text">...</p>' +
-                    '</a>';
-        }
-        htmlString += '</div>';
-        console.log(htmlString);
-        document.getElementById("firewall-test").innerHTML = htmlString;
-
-    }
-    function firewall_init() {
-        db.Service.getAll(function (err, res) {
-            console.log(res);
-            displayTestType(res);
-        })
-    }
-    $('#UDPtest').click(function () {
-        asatConsole.log("start UDP Test");
-        new UDPTest('rerector.aerohive.com', 12222, asatConsole);
-    });
-    $('#Test').click(function () {
-        asatConsole.log("start TCP Test");
-
-        new HTTPTest('redirector.aerohive.com', 80, "1", asatConsole, function(){
-            asatConsole.error("back");
-        });
-
-    });
-
-</script>
 </body>
 </html>

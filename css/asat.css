@@ -155,6 +155,17 @@ article.action.console {
 .firewall-test-result {
     text-align: center;
 }
+input {
+    background-color: #FFF !important;
+    border-color: #111111 !important;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.125) inset !important;
+}
+input:disabled {
+    background-color: #222222 !important;
+}
+label.disabled {
+    color: #333333;
+}
 /*============================================== /
 / ================= lIST-GROUP ================= /
 / ============================================== */
@@ -166,7 +177,7 @@ article.action.console {
 .list-group-item.active:hover {
     background-color: #222222 !important;
     border-color: #111111 !important;
-    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.125) inset;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.125) inset;
 }
 .list-group-item:hover .list-group-item-heading,
 .list-group-item:hover .list-group-item-text,
@@ -186,7 +197,7 @@ article.action.console {
 .list-group-item.active {
     background-color: #333333 !important;
     border-color: #111111 !important;
-    box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.125) inset;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.125) inset;
 }
 .list-group-item.active .list-group-item-heading, .list-group-item.active .list-group-item-text{
     color: #ffffff !important;

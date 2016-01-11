@@ -12,7 +12,7 @@ function TCPTest(host, port, process, asatConsole, callback) {
     client.on('end', function () {
         asatConsole.debug('TCP ' + process + ' - Disconnected from server ' + host + ":" + port);
     });
-    client.on('close', function(had_error){
+    client.on('close', function (had_error) {
         if (error) asatConsole.error("TCP " + process + " - Connection to " + host + ":" + port + " failed");
         else asatConsole.info('TCP ' + process + ' - Connection established to ' + host + ':' + port);
 
@@ -41,13 +41,14 @@ function TCPTest(host, port, process, asatConsole, callback) {
     client.connect(port, host, function () { //'connect' listener
         asatConsole.debug('TCP ' + process + ' - Trying to establish a connection to ' + ip + ':' + port);
         client.write("Hello Server\r\n");
-        setTimeout(function(){
-            if (!client){
+        setTimeout(function () {
+            if (!client) {
                 connected = false;
                 asatConsole.error("TCP " + process + " - Request to " + host + " timed out");
                 client.close();
             }
         }, 5000);
     });
+
 }
 
