@@ -104,8 +104,8 @@ function HTTPSTest(host, port, process, asatConsole, proxy, callback) {
             res.on('end', function () {
                 if (httpCode.hasOwnProperty(res.statusCode.toString())) {
                     if (res.statusCode < 200 || res.statusCode >= 400) {
-                        error = true;
-                        asatConsole.error("TCP " + process + " - Got HTTP " + res.statusCode + "; " + httpCode[res.statusCode]);
+                        error = "warning";
+                        asatConsole.warning("TCP " + process + " - Got HTTP " + res.statusCode + "; " + httpCode[res.statusCode]);
                     } else {
                         asatConsole.info("TCP " + process + " - Got HTTP " + res.statusCode + "; " + httpCode[res.statusCode]);
                     }

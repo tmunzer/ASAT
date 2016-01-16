@@ -8,6 +8,10 @@ body {
     color: #adadad;
     width: 100%;
 }
+
+hr {
+    margin: 1em 0 1em 0;
+}
 /*============================================== /
 / ==================== HEADER=================== /
 / ============================================== */
@@ -75,7 +79,7 @@ nav a {
 
 section {
     padding-left: 210px;
-    padding-top: 60px;
+    padding-top: 40px;
     padding-bottom: 50px;
 }
 
@@ -106,7 +110,7 @@ aside {
 article.action {
     position: relative;
     width: 100%;
-    padding-top: 50px;
+    padding-top: 25px;
     padding-left: 70px;
     padding-right: 70px;
 }
@@ -118,6 +122,31 @@ article.action.console {
 .next {
     float: right;
 }
+
+/*============================================== /
+/ ================= SPAN BADGED ================ /
+/ ============================================== */
+
+.span-disabled {
+    background-color: #adadad;
+    border: 1px solid transparent !important;
+}
+.span-disabled a {
+    color: white;
+    text-decoration: none !important;
+    font-weight: normal !important;
+}
+
+.span-enabled {
+    background-color: white;
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.125) inset !important;
+}
+.span-enabled a {
+    color: #222222;
+    text-decoration: none !important;
+    font-weight: normal !important;
+}
+
 /*============================================== /
 / ================= BREADCRUMB ================= /
 / ============================================== */
@@ -136,18 +165,20 @@ article.action.console {
 .breadcrumb-row:after {
     content: "";
     z-index: -1;
-    width: 78%;
-    left: 10%;
+    width: 66%;
+    left: 17%;
     top: 75%;
     height: 0;
     position: absolute;
     border-top: 1px solid white;
 }
 .breadcrumb-row i {
-
     position: relative;
     background-color: #222222;
     color: white;
+}
+.breadcrumb-table td {
+    width: 33%;
 }
 /*============================================== /
 / ================== FIREWALL ================== /
@@ -166,6 +197,7 @@ input:disabled {
 label.disabled {
     color: #333333;
 }
+
 /*============================================== /
 / ================= lIST-GROUP ================= /
 / ============================================== */

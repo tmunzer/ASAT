@@ -34,6 +34,7 @@ function UDPTest(host, port, process, asatConsole, callback){
             asatConsole.info("UDP " + process + " - CAPWAP ECHO REQUEST sent to " + host + ":" + port);
             setTimeout(function(){
                 if (!socketClosed){
+                    error = "timeout";
                     asatConsole.error("UDP " + process + " - Request to " + host + " timed out");
                     client.close();
                 }

@@ -2,8 +2,28 @@ var db = require("./sqlite.main").db;
 var Service = require("./sqlite.main").Service;
 var Proto = require("./sqlite.main").Proto;
 
-function DeviceTest(row, callback){
-    var device = {};
+function DeviceTest(){
+    this.TEST_ID = "";
+    this.HOST = "";
+    this.PORT = "";
+    this.COMMENT = "";
+    this.SERVICE_ID = "";
+    this.PROTO_ID = "";
+    this.TEST_NAME = "";
+    this.PROTO_NAME = "";
+    this.TEST_NAME = "";
+    this.PROTO_NAME = "";
+}
+
+DeviceTest.prototype.getHost = function(hm6, hmng){
+    if (this.SERVICE_ID == 1) return this.HOST.replace("%dc", hm6.dc_area).replace("%cluster", hm6.cluster);
+    else if (this.SERVICE_ID == 2) return this.HOST.replace("%dc", hmng.dc_area);
+    else return this.HOST;
+};
+
+
+function createDeviceTest(row, callback){
+    var device = new DeviceTest();
     device.TEST_ID = row.id;
     device.HOST = row.HOST;
     device.PORT = row.PORT;
@@ -31,14 +51,27 @@ function DeviceTest(row, callback){
     } else callback(null, device);
 }
 
+
+
+sortList = function (deviceTestA, deviceTestB) {
+    if (deviceTestA.HOST > deviceTestB.HOST) return 1;
+    else if (deviceTestA.HOST < deviceTestB.HOST) return -1;
+    else {
+        if (deviceTestA.PORT > deviceTestB.PORT) return 1;
+        else if (deviceTestA.PORT < deviceTestB.PORT) return -1;
+        else return 0;
+    }
+};
+
 function deviceTestListFormat(res, callback){
     var deviceTestList = [];
     var deviceTestNum = 0;
     for (var i = 0; i < res.length; i++){
-        new DeviceTest(res[i], function(err, device){
+        createDeviceTest(res[i], function(err, device){
             if (device) deviceTestList.push(device);
             deviceTestNum ++;
             if (deviceTestNum == res.length){
+                deviceTestList.sort(sortList);
                 callback(deviceTestList);
             }
         });

@@ -31,6 +31,10 @@ var Sqlite = function(){
             db.run('CREATE TABLE "HM_VERSION" (' +
                 '"id" INTEGER PRIMARY KEY, ' +
                 '"VERSION" VARCHAR(60))');
+            db.run('CREATE TABLE "HM6_DC" (' +
+                '"id" INTEGER PRIMARY KEY, ' +
+                '"AREA" VARCHAR(12),' +
+                '"HOST_VALUE VARCHAR(12))');
             db.run("INSERT INTO SERVICE VALUES (1, 'HiveManager 6')");
             db.run("INSERT INTO SERVICE VALUES (2, 'HiveManager NG')");
             db.run("INSERT INTO SERVICE VALUES (3, 'IDManager')");

@@ -11,7 +11,7 @@ Console.prototype.error = function(text){
     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
 };
 Console.prototype.warning = function(text){
-    $('#console').append("<span> " + getTime() + " - </span><span style='color: yellow;'>warning</span><span> - " + text + "</span><br>");
+    $('#console').append("<span> " + getTime() + " - </span><span style='color: orange;'>warning</span><span> - " + text + "</span><br>");
     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
 };
 Console.prototype.info = function(text){

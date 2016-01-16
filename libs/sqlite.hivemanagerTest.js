@@ -2,8 +2,21 @@ var db = require("./sqlite.main").db;
 var HmVersion = require("./sqlite.main").HmVersion;
 var Proto = require('./sqlite.main').Proto;
 
-function HivemanagerTest(row, callback){
-    var hivemanager = {};
+function HivemanagerTest(){
+    this.TEST_ID = "";
+    this.HOST = "";
+    this.PORT = "";
+    this.COMMENT = "";
+    this.HM_VERSION_ID = "";
+    this.PROTO_ID = "";
+    this.TEST_NAME = "";
+    this.PROTO_NAME = "";
+    this.TEST_NAME = "";
+    this.PROTO_NAME = "";
+}
+
+function createHivemanagerTest(row, callback){
+    var hivemanager = new HivemanagerTest();
     hivemanager.TEST_ID = row.id;
     hivemanager.HOST = row.HOST;
     hivemanager.PORT = row.PORT;
@@ -31,14 +44,25 @@ function HivemanagerTest(row, callback){
     } else callback(null, hivemanager);
 }
 
+sortList = function (HivemanagerTestA, HivemanagerTestB) {
+    if (HivemanagerTestA.HOST > HivemanagerTestB.HOST) return 1;
+    else if (HivemanagerTestA.HOST < HivemanagerTestB.HOST) return -1;
+    else {
+        if (HivemanagerTestA.PORT > HivemanagerTestB.PORT) return 1;
+        else if (HivemanagerTestA.PORT < HivemanagerTestB.PORT) return -1;
+        else return 0;
+    }
+};
+
 function deviceTestListFormat(res, callback){
     var HivemanagerTestList = [];
     var HivemanagerTesttNum = 0;
     for (var i = 0; i < res.length; i++){
-        new HivemanagerTest(res[i], function(err, hivemanager){
+        createHivemanagerTest(res[i], function(err, hivemanager){
             if (hivemanager) HivemanagerTestList.push(hivemanager);
             HivemanagerTesttNum ++;
             if (HivemanagerTesttNum == res.length){
+                HivemanagerTestList.sort(sortList);
                 callback(HivemanagerTestList);
             }
         });

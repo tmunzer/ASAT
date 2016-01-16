@@ -1,5 +1,6 @@
 var db = require("./libs/sqlite.main");
 var testList = [];
+var options = [];
 var proxy = {
     configured: false,
     host: "",
@@ -7,6 +8,15 @@ var proxy = {
     auth: false,
     user: "",
     password: ""
+};
+var hm6 = {
+    dc_id : 0,
+    dc_area : "emea",
+    cluster : "51"
+};
+var hmng = {
+    dc_id : 0,
+    dc_area: 'ie'
 };
 
 /* ===================================================
@@ -85,12 +95,15 @@ function displayFirewallService(type) {
 /* ===================================================
    ================ FW DESTINATIONS ==================
    =================================================== */
-function displayFirewallDestinationsHTML(type) {
+function displayFirewallDestinationsHTML(type, options, optionString) {
     // change the breadcrumb status
     $(".firewall-button").removeClass("fa-circle").addClass("fa-circle-o");
-    $("#firewall-test-dest").removeClass("fa-circle-o").addClass("fa-circle");
+    $("#firewall-test-run").removeClass("fa-circle-o").addClass("fa-circle");
     var htmlString =
+        "<h4>Parameters</h4>" +
         displayProxyButton(type) +
+        optionString +
+        "<hr>"+
         "<table class='table table-condensed' id='entry-list'>" +
         "<thead>" +
         "<tr>" +
@@ -104,10 +117,15 @@ function displayFirewallDestinationsHTML(type) {
         "<tbody>";
     for (var i in testList) {
         for (var j in testList[i]) {
+            var hostnameHTML = "<td>" + testList[i][j].HOST + "</td>";
+            // if the user selected HM6 tests; add a data proporty to be able to change the hostname value based on the configuration
+            if (testList[i][j].SERVICE_ID == "1") hostnameHTML = "<td class='hm6' data-i='"+i+"'data-j='"+j+"'>" + testList[i][j].getHost(hm6, hmng) + "</td>";
+            // if the user selected HMNG tests; add a data proporty to be able to change the hostname value based on the configuration
+            else if (testList[i][j].SERVICE_ID == "2") hostnameHTML = "<td class='hmng' data-i='"+i+"'data-j='"+j+"'>" + testList[i][j].getHost(hm6, hmng) + "</td>";
             htmlString +=
                 "<tr>" +
                 "<td>" + testList[i][j].TEST_NAME + "</td>" +
-                "<td>" + testList[i][j].HOST + "</td>" +
+                hostnameHTML +
                 "<td>" + testList[i][j].PORT + "</td>" +
                 "<td class='firewall-test-result'>" + testList[i][j].PROTO_NAME + '</td>' +
                 "<td class='firewall-test-result' id='firewall-entry-" + testList[i][j].TEST_ID + "'> </td>" +
@@ -120,11 +138,32 @@ function displayFirewallDestinationsHTML(type) {
     // change the buttons status
     document.getElementById("firewall-action").innerHTML =
         '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')" value="Back"/>' +
-        '<input type="button" id="button-next" class="next btn btn-default" onclick="displayFirewallResult(\'' + type + '\')" value="Run Test"/>';
+        '<input type="button" id="button-next" class="next btn btn-default" onclick="startFirewallTest(\'' + type + '\')" value="Run Test"/>';
+    hm6DcChange();
+    hm6ClusterChange();
+    hmNgDcChange();
+}
+function displayFirewallDestinationsOptions(type, options) {
+    var htmlString = "";
+    if (options.indexOf("hm6") >= 0) displayHm6Option(function(res){
+        htmlString = res;
+        if (options.indexOf("hmng") >= 0) displayHmNgOption(function(res){
+            htmlString += res;
+            displayFirewallDestinationsHTML(type, options, htmlString);
+        });
+        else displayFirewallDestinationsHTML(type, options, htmlString);
+
+    });
+    else if (options.indexOf("hmng") >= 0) displayHmNgOption(function(res){
+        htmlString = res;
+        displayFirewallDestinationsHTML(type, options, htmlString);
+    });
+    else displayFirewallDestinationsHTML(type, options, htmlString);
 }
 
 function displayFirewallDestinations(type) {
     if (testList.length == 0) {
+        options = [];
         // select all the "selected" entries
         var selectedServices = $("a[id^='firewall-entry-'].active");
         var selectedServicesNumber = 0;
@@ -132,39 +171,40 @@ function displayFirewallDestinations(type) {
         $(selectedServices).each(function () {
             var entryId = $(this).data("entry-id");
             if (type == "device") {
+                // if the user selected HM6 tests; this will display HM6 options (DC and cluster)
+                if (entryId == 1) options.push("hm6");
+                // if the user selected HMNG tests; this will display HMNG options (area)
+                else if (entryId == 2) options.push('hmng');
                 db.Device.findByServiceId(entryId, function (err, res) {
                     testList.push(res);
                     selectedServicesNumber++;
-                    if (selectedServicesNumber == selectedServices.length) displayFirewallDestinationsHTML(type);
+                    if (selectedServicesNumber == selectedServices.length) displayFirewallDestinationsOptions(type, options);
                 });
             } else if (type == "hivemanager") {
                 db.HiveManager.findByHmVersionId(entryId, function (err, res) {
                     testList.push(res);
                     selectedServicesNumber++;
-                    if (selectedServicesNumber == selectedServices.length) displayFirewallDestinationsHTML(type);
+                    if (selectedServicesNumber == selectedServices.length) displayFirewallDestinationsOptions(type, options);
                 });
-            } else displayFirewallDestinationsHTML(type);
+            } else displayFirewallDestinationsOptions(type, options);
         });
-    } else displayFirewallDestinationsHTML(type);
+    } else displayFirewallDestinationsOptions(type, options);
 }
 
 /* ===================================================
    ====================== FW RESULTS =================
    =================================================== */
-function displayFirewallResult(type) {
+function startFirewallTest(type) {
     // clear the "Test Result column"
     for (var i in testList) {
         for (var j in testList[i]) {
             document.getElementById("firewall-entry-" + testList[i][j].TEST_ID).innerHTML = '<i class="fa fa-circle-o-notch fa-spin"></i>';
         }
     }
-    // change the breadcrumb status
-    $(".firewall-button").removeClass("fa-circle").addClass("fa-circle-o");
-    $("#firewall-test-run").removeClass("fa-circle-o").addClass("fa-circle");
     // change the buttons status
     document.getElementById("firewall-action").innerHTML =
-        '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')" value="Back"/>' +
-        '<input type="button" id="button-next" class="next btn btn-default" onclick="displayFirewallResult()" value="Restart Test"/>';
+        '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')" value="Back"/>' +
+        '<input type="button" id="button-next" class="next btn btn-default" onclick="startFirewallTest()" value="Restart Test"/>';
     for (var i in testList) {
         for (var j in testList[i]) {
             var test = testList[i][j];
@@ -174,7 +214,7 @@ function displayFirewallResult(type) {
                 if (proxy.configured){
                     document.getElementById("firewall-entry-" + test.TEST_ID).innerHTML = "<i class='fa fa-exclamation-circle' style='color: blue'></i>";
                 } else {
-                    new UDPTest(test.HOST, test.PORT, test.TEST_ID, asatConsole, function (err) {
+                    new UDPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, function (err) {
                         if (err) document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-times-circle' style='color: red'></i>";
                         else document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-check-circle' style='color: green'></i>";
                     }.bind({test: test}));
@@ -183,21 +223,24 @@ function displayFirewallResult(type) {
             // TCP
             } else if (test.PROTO_ID == "1") {
                 if (test.PORT == 80){
-                    new HTTPTest(test.HOST, testList[i][j].PORT, test.TEST_ID, asatConsole, proxy, function (had_error) {
-                        if (had_error) document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-times-circle' style='color: red'></i>";
+                    new HTTPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, proxy, function (had_error) {
+                        if (had_error == "warning") document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-warning' style='color: orange'></i>";
+                        else if (had_error) document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-times-circle' style='color: red'></i>";
                         else document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-check-circle' style='color: green'></i>";
                     }.bind({test: test}));
                 } else if (test.PORT == 443){
-                    new HTTPSTest(test.HOST, test.PORT, test.TEST_ID, asatConsole, proxy, function (had_error) {
-                        if (had_error) document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-times-circle' style='color: red'></i>";
+                    new HTTPSTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, proxy, function (had_error) {
+                        if (had_error == "warning") document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-warning' style='color: red'></i>";
+                        else if (had_error) document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-times-circle' style='color: red'></i>";
                         else document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-check-circle' style='color: green'></i>";
                     }.bind({test: test}));
                 } else {
                     if (proxy.configured){
                         document.getElementById("firewall-entry-" + test.TEST_ID).innerHTML = "<i class='fa fa-exclamation-circle' style='color: blue'></i>";
                     } else {
-                        new TCPTest(testList[i][j].HOST, test.PORT, test.TEST_ID, asatConsole, function (had_error) {
-                            if (had_error) document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-times-circle' style='color: red'></i>";
+                        new TCPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, function (had_error) {
+                            if (had_error == "warning") document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-warning' style='color: red'></i>";
+                            else if (had_error) document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-times-circle' style='color: red'></i>";
                             else document.getElementById("firewall-entry-" + this.test.TEST_ID).innerHTML = "<i class='fa fa-check-circle' style='color: green'></i>";
                         }.bind({test: test}));
                     }
@@ -207,7 +250,13 @@ function displayFirewallResult(type) {
     }
 }
 
+/* ===================================================
+ ======================== BUTTONS ====================
+ =================================================== */
 
+/* ===================================================
+ ====================== FW BUTTONS ===================
+ =================================================== */
 function buttonFirewall(id, prefix, exclusif) {
     var currentButton = $("#" + id);
     if (currentButton.hasClass("active")) {
@@ -227,20 +276,23 @@ function buttonFirewall(id, prefix, exclusif) {
     }
 }
 
-function displayProxyButton() {
-    var htmlString = "";
+/* ===================================================
+ ====================== PROXY BUTTONS =================
+ =================================================== */
+function displayProxyButton(type, options) {
+    var htmlString = "<span>Proxy: </span>";
     if (proxy.configured) {
-        htmlString =
-            '<a type="button" id="button-proxy" class="btn btn-default" onclick="proxyConfiguration()">' +
-            'Enable Proxy ' +
+        htmlString +=
+            '<span class="badge span-enabled"><a href="#" id="button-proxy" onclick="proxyConfiguration(\'' + type + '\', \'' + options + '\')">' +
+            'Enabled ' +
             '<i class="fa fa-check-square-o"></i>' +
-            '</a>';
+            '</a></span>';
     } else {
-        htmlString =
-            '<a type="button" id="button-proxy" class="btn btn-default" onclick="proxyConfiguration()">' +
-            'Enable Proxy ' +
+        htmlString +=
+            '<span class="badge span-disabled"><a href="#" id="button-proxy" onclick="proxyConfiguration(\'' + type + '\', \'' + options + '\')">' +
+            'Disabled ' +
             '<i class="fa fa-square-o"></i>' +
-            '</a>';
+            '</a></span>';
     }
     return htmlString;
 }
@@ -250,7 +302,7 @@ function proxyConfiguration(type) {
         '<div style="width: 70%; margin: auto"><h4>Proxy Configuration</h4>' +
         '<hr>' +
         '<input type="checkbox" name="proxy_conf" id="proxy_conf" onclick="enableProxyConf(this.checked)"/>' +
-        '<label for="proxy_conf">Enable Proxy</label>' +
+        '<label for="proxy_conf"> Enable Proxy</label>' +
         '<br>' +
         '<label for="host" class="proxy_conf_label disabled"> Proxy IP Address/Hostname:</label>' +
         '<input type="text" class="form-control proxy_conf_input" id="proxy_host" disabled="disabled" value="' + proxy.host + '"/>' +
@@ -258,7 +310,7 @@ function proxyConfiguration(type) {
         '<input type="text" class="form-control proxy_conf_input" id="proxy_port" disabled="disabled" value="' + proxy.port + '"/>' +
         '<hr>' +
         '<input type="checkbox" name="proxy_auth" id="proxy_auth"  onclick="enableProxyAuth(this.checked)" class="proxy_conf_input">' +
-        '<label for="proxy_auth" class="proxy_conf_label disabled">Enable Proxy Authentication</label>' +
+        '<label for="proxy_auth" class="proxy_conf_label disabled"> Enable Proxy Authentication</label>' +
         '<br>' +
         '<label for="proxy_user" class="proxy_auth_label disabled">Username:</label>' +
         '<input type="text" class="form-control proxy_auth_input" id="proxy_user" disabled="disabled" value="' + proxy.user + '"/>' +
@@ -267,7 +319,7 @@ function proxyConfiguration(type) {
         '</div>';
     document.getElementById("firewall-test").innerHTML = htmlString;
     document.getElementById("firewall-action").innerHTML =
-        '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')" value="Cancel"/>' +
+        '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')" value="Cancel"/>' +
         '<input type="button" id="button-next" class="next btn btn-default" onclick="saveProxy(\'' + type + '\')" value="Save"/>';
 
     document.getElementById("proxy_conf").checked = proxy.configured;
@@ -325,10 +377,96 @@ function saveProxy(type) {
     } else {
         proxy.configured = false;
     }
-    displayFirewallDestinationsHTML(type);
+    displayFirewallDestinations(type);
 }
 
+/* ===================================================
+ ====================== HM6 PARAMs ===================
+ =================================================== */
+function displayHm6Option(callback){
+    var htmlString =
+        "<br>" +
+        "<span>HiveManager 6 Datacenter </span>" +
+        "<select id='hm6_dc' onchange='hm6DcChange()'>";
+    db.Hm6DC.getAll(function(err, res){
+        for (var i in res){
+            if (hm6.dc_id == res[i].id) htmlString += "<option value='"+res[i].id + "' data-area='"+res[i].HOST_VALUE + "' selected='selected'>" + res[i].AREA + "</option>";
+            else htmlString += "<option value='"+res[i].id + "' data-area='"+res[i].HOST_VALUE+"'>" + res[i].AREA + "</option>";
+        }
+        htmlString +=
+            "</select>" +
+            "<span> and cluster number </span>" +
+            "<input type='number' size='4' id='hm6_cluster' onkeypress='return event.charCode >= 48 && event.charCode <= 57' oninput='hm6ClusterChange()' value='"+hm6.cluster+"'/>";
+        callback(htmlString);
+    })
+}
 
+function hm6DcChange() {
+    var myselect = document.getElementById("hm6_dc");
+    hm6.dc_id = myselect.options[myselect.selectedIndex].value;
+    hm6.dc_area = myselect.options[myselect.selectedIndex].dataset.area;
+
+    updateHm6();
+}
+function hm6ClusterChange() {
+    var cluster = document.getElementById('hm6_cluster').value;
+    if (cluster < 0 ) {
+        cluster = 0;
+        document.getElementById('hm6_cluster').value = 0;
+    }
+    if (cluster.toString().length < 2) cluster = "00" + cluster;
+    else if (cluster.toString().length < 3) cluster = "0"+cluster;
+    hm6.cluster = cluster;
+    updateHm6();
+}
+function updateHm6(){
+    var hm6Entries = document.getElementsByClassName("hm6");
+    if (hm6Entries.length > 0){
+        for (var num = 0; num < hm6Entries.length; num ++) {
+            var entry = hm6Entries[num];
+            var i = entry.dataset['i'];
+            var j = entry.dataset['j'];
+            entry.innerHTML = testList[i][j].getHost(hm6, hmng);
+        }
+    }
+}
+/* ===================================================
+ ====================== HMNG PARAMs ==================
+ =================================================== */
+function displayHmNgOption(callback){
+    var htmlString =
+        "<span>HiveManager NG Datacenter: </span>" +
+        "<select id='hmng_dc' onchange='hmNgDcChange()'>";
+    db.HmNgDC.getAll(function(err, res){
+        for (var i in res){
+            if (hmng.dc_id == res[i].id) htmlString += "<option value='"+res[i].id + "' data-area='"+res[i].HOST_VALUE + "' selected='selected'>" + res[i].AREA + "</option>";
+            else htmlString += "<option value='"+res[i].id + "' data-area='"+res[i].HOST_VALUE+"'>" + res[i].AREA + "</option>";
+        }
+        htmlString += "</select>";
+        callback(htmlString);
+    })
+}
+function hmNgDcChange() {
+    var myselect = document.getElementById("hmng_dc");
+    hmng.dc_id = myselect.options[myselect.selectedIndex].value;
+    hmng.dc_area = myselect.options[myselect.selectedIndex].dataset.area;
+    updateHmNg();
+}
+
+function updateHmNg(){
+    var hmNGEntries = document.getElementsByClassName("hmng");
+    if (hmNGEntries.length > 0){
+        for (var num = 0; num < hmNGEntries.length; num ++) {
+            var entry = hmNGEntries[num];
+            var i = entry.dataset['i'];
+            var j = entry.dataset['j'];
+            entry.innerHTML = testList[i][j].getHost(hm6, hmng);
+        }
+    }
+}
+/* ===================================================
+ ====================== DEBUG ========================
+ =================================================== */
 $('#UDPtest').click(function () {
     asatConsole.log("start UDP Test");
     new UDPTest('rerector.aerohive.com', 12222, asatConsole);
