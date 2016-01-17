@@ -6,8 +6,10 @@
     <link type="text/css" rel='stylesheet' href='./css/bootstrap.min.css'>
     <link type="text/css" rel="stylesheet" href="./css/font-awesome.min.css">
     <script type="text/javascript" src='./js/jquery.min.js'></script>
+    <script type="text/javascript" src='./js/jquery.qtip.min.js'></script>
     <script type="text/javascript" src='./js/bootstrap.min.js'></script>
     <link rel="stylesheet" href="./css/asat.css"/>
+    <link rel="stylesheet" href="./css/jquery.qtip.min.css"/>
 </head>
 <script>
     // var generate = require("jade").compile
@@ -23,7 +25,7 @@
                 <img id="logo" src="images/aerohive_logo.png">
             </span>
             <span id="asat">
-                <span>Aerohive Stand Alone Tool v0.1.3</span>
+                <span>Aerohive Stand Alone Tool </span><span id="current-release"></span>
             </span>
     </div>
 </header>
@@ -70,21 +72,21 @@
                 </a>
             </li>
             <li>
-                <a href="#" onclick="main('info')" id="info-button" class="main-button" >
+                <a href="#"  onclick="main('update')"id="update-button" class="main-button">
+                                <span class="fa-stack fa-lg">
+                                  <i class="fa fa-circle-thin fa-stack-2x"></i>
+                                  <i class="fa fa-download fa-stack-1x "></i>
+                                </span>
+                    Update ASAT
+                </a>
+            </li>
+            <li>
+                <a href="#" onclick="main('license')" id="license-button" class="main-button" >
                             <span class="fa-stack fa-lg">
                               <i class="fa fa-circle-thin fa-stack-2x"></i>
                               <i class="fa fa-info fa-stack-1x "></i>
                             </span>
-                    Info
-                </a>
-            </li>
-            <li>
-                <a href="#"  onclick="main('update')"id="update-button" class="main-button" disabled="disabled">
-                            <span class="fa-stack fa-lg">
-                              <i class="fa fa-circle-thin fa-stack-2x"></i>
-                              <i class="fa fa-download fa-stack-1x "></i>
-                            </span>
-                    Update ASAT
+                    License
                 </a>
             </li>
         </ul>
@@ -102,19 +104,19 @@
         <p>This is a Free APP build to help Aerohive partners and customers. This APP is designed to provide helps
             on site, to:</p>
         <ul>
-            <li>Troubleshoot connection issues between
+            <li>Troubleshoot connection issues:
                 <ul>
-                    <li>Aerohive Devices and HiveManager 6 Online servers</li>
-                    <li>Aerohive Devices and IDManager services</li>
-                    <li>Aerohive Devices and HiveManager NG Online servers</li>
-                    <li>Aerohive HiveManager 6 and HiveManager NG Onpremise, and Aerohive License server</li>
-                    <li>Aerohive HiveManager 6 and IDManager services</li>
+                    <li>Aerohive Devices to HiveManager 6 Online servers</li>
+                    <li>Aerohive Devices to IDManager services</li>
+                    <li>Aerohive Devices to HiveManager NG Online servers</li>
+                    <li>Aerohive HiveManager 6 and HiveManager NG Onpremise to Aerohive License server</li>
+                    <li>Aerohive HiveManager 6 to IDManager services</li>
                 </ul>
             </li>
-            <li>Easily deploy new access points by providing an easy way to :
+            <li>Easily deploy new access points by providing an easy way to configure:
                 <ul>
-                    <li>Configure Aerohive Devices CAPWAP client</li>
-                    <li>Configure Aerohive Devices IP Address</li>
+                    <li>Aerohive Devices' CAPWAP client</li>
+                    <li>Aerohive Devices' IP Address</li>
                 </ul>
             </li>
             <li>Quickly configure an Aerohive Access Point in Site Survey mode:
@@ -126,15 +128,6 @@
                 </ul>
             </li>
         </ul>
-        <h3>NOTICE</h3>
-
-        <p>This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the
-            implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
-            for more details.</p>
-
-        <p>This program is free software: you can redistribute it and/or modify it under the terms of the GNU General
-            Public License as published by the Free Software Foundation, either version 3 of the License, or (at your
-            option) any later version.</p>
         </div>
     </article>
 </section>
@@ -188,6 +181,14 @@
 
 </section>
 <!-- ============================================ -->
+<!-- =================== LICENSE ================ -->
+<section class="main no-console" id="license" style="display: none">
+</section>
+<!-- ============================================ -->
+<!-- =================== UPDATES ================ -->
+<section class="main no-console" id="update" style="display: none">
+</section>
+<!-- ============================================ -->
 <!-- =================== FOOTER ================= -->
 <!-- ============================================ -->
 
@@ -232,11 +233,26 @@
             case "firewall":
                 displayFirewallTest();
                 break;
+            case "license":
+                displayLicense();
+                break;
+            case "update":
+                displayUpdate();
+                break;
         }
     }
     var asatConsole = new Console();
     asatConsole.log("All systems are running.");
 
+</script>
+<!-- ============================================ -->
+<!-- ================= LICENSE ================== -->
+<script type="text/javascript" src='js/asat.license.js'></script>
+<!-- ============================================ -->
+<!-- ================= UPDATE =================== -->
+<script type="text/javascript" src='js/asat.update.js'></script>
+<script>
+    $("#current-release").text(currentRelease);
 </script>
 <!-- ============================================ -->
 <!-- ================= FIREWALL ================= -->

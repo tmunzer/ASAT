@@ -79,7 +79,7 @@ nav a {
 
 section {
     padding-left: 210px;
-    padding-top: 40px;
+    padding-top: 50px;
     padding-bottom: 50px;
 }
 
@@ -199,6 +199,42 @@ label.disabled {
 }
 
 /*============================================== /
+/ ================== UPDATE ================== /
+/ ============================================== */
+
+hr.history {
+    border-color: gray;
+    margin-left: 15em;
+    margin-right: 15em;
+}
+.release-note {
+    width: 80%;
+    margin: auto;
+    padding: 1em;
+    background-color: white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 1) inset !important;
+}
+.cancelDL {
+    color: white;
+}
+.cancelDL-disabled {
+    color: #adadad;
+    pointer-events: none;
+}
+
+/*============================================== /
+/ ================== LICENSE =================== /
+/ ============================================== */
+.license {
+    width: 90%;
+    padding: 1em;
+    background-color: white;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 1) inset !important;
+    font-family: monospace;
+    color: black;
+    margin: 1em auto;
+}
+/*============================================== /
 / ================= lIST-GROUP ================= /
 / ============================================== */
 .list-group {
@@ -281,3 +317,5 @@ footer.no-console a {
 #console.no-console {
     bottom: -165px;
 }
+
+

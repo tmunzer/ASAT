@@ -15,6 +15,10 @@ function HivemanagerTest(){
     this.PROTO_NAME = "";
 }
 
+HivemanagerTest.prototype.getHost = function(){
+    return this.HOST;
+};
+
 function createHivemanagerTest(row, callback){
     var hivemanager = new HivemanagerTest();
     hivemanager.TEST_ID = row.id;
