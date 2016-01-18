@@ -3,23 +3,25 @@ function TCPTest(host, port, process, asatConsole, callback) {
     var client = new net.Socket();
     var ip = "";
     var error = null;
-
+    var warning = null;
+    var success = null;
 
     var retry = 0;
     var maxRetry = 1;
 
     asatConsole.info("TCP " + process + " - Test for " + host + ":" + port);
-    runTcpTest(function queueCallback(error, warning) {
+    runTcpTest(function queueCallback(error, warning, success) {
         if (error && retry < maxRetry) {
             retry++;
             asatConsole.warning("TCP " + process + " - Retry  for " + host + ":" + port);
             runTcpTest(queueCallback)
-        } else callback(error, warning);
+        } else callback(error, warning, success);
     });
 
     function runTcpTest(tcpCallback) {
         client.on('data', function (data) {
             asatConsole.debug('TCP ' + process + ' - received message from server: ' + data.toString());
+            success = "Received data from server";
             client.end();
         });
 
@@ -32,7 +34,7 @@ function TCPTest(host, port, process, asatConsole, callback) {
 
             client.destroy();
             asatConsole.debug("TCP " + process + " - Socket destroyed for server " + host + ":" + port);
-            tcpCallback(error);
+            tcpCallback(error, warning, success);
         });
         client.on("error", function (err) {
             error = err;

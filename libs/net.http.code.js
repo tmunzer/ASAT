@@ -1,3 +1,19 @@
+function getHttpCode(res, process) {
+    var error, warning, success;
+    if (res.statusCode >= 400 && res.statusCode < 500) {
+        error = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
+        asatConsole.error("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
+    } else if (res.statusCode < 200 || res.statusCode >= 300) {
+        warning = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
+        asatConsole.warning("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
+    } else {
+        success = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
+        asatConsole.info("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
+    }
+    return {error: error, warning: warning, success: success};
+}
+
+
 var httpCode = {
     100: "Continue",
     101: "Switching Protocol",

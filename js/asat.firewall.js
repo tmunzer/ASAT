@@ -67,8 +67,8 @@ function displayFirewallServiceHTML(res, type) {
     document.getElementById("firewall-test").innerHTML = htmlString;
     // change the buttons status
     document.getElementById("firewall-action").innerHTML =
-        '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallTest()" value="Back"/>' +
-        '<input type="button" id="button-next" class="next btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')" disabled="disabled" value="Next"/>';
+        '<button id="button-back" class="back btn btn-default" onclick="displayFirewallTest()">Back</button>' +
+        '<button id="button-next" class="next btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')" disabled="disabled">Next</button>';
 }
 
 function displayFirewallService(type) {
@@ -137,8 +137,8 @@ function displayFirewallDestinationsHTML(type, optionString) {
     document.getElementById("firewall-test").innerHTML = htmlString;
     // change the buttons status
     document.getElementById("firewall-action").innerHTML =
-        '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')" value="Back"/>' +
-        '<input type="button" id="button-next" class="next btn btn-default" onclick="startFirewallTest(\'' + type + '\')" value="Run Test"/>';
+        '<button id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')">Back</button>' +
+        '<button id="button-next" class="next btn btn-default" onclick="startFirewallTest(\'' + type + '\')">Run Test</button>';
     hm6DcChange();
     hm6ClusterChange();
     hmNgDcChange();
@@ -203,8 +203,8 @@ function startFirewallTest(type) {
     }
     // change the buttons status
     document.getElementById("firewall-action").innerHTML =
-        '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')" value="Back"/>' +
-        '<input type="button" id="button-next" class="next btn btn-default" onclick="startFirewallTest()" value="Restart Test"/>';
+        '<button id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')">Back</button>' +
+        '<button id="button-next" class="next btn btn-default" onclick="startFirewallTest()">Restart Test</button>';
     for (var i in testList) {
         for (var j in testList[i]) {
             var test = testList[i][j];
@@ -212,31 +212,31 @@ function startFirewallTest(type) {
             //UDP
             if (test.PROTO_ID == "2") {
                 if (proxy.configured) {
-                    displayResult(test.TEST_ID, null, null, true);
+                    displayResult(test.TEST_ID, null, null, null, true);
                 } else {
-                    new UDPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, function (error, warning) {
-                        displayResult(this.test.TEST_ID, error, warning)
+                    new UDPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, function (error, warning, success) {
+                        displayResult(this.test.TEST_ID, error, warning, success)
                     }.bind({test: test}));
                 }
 
                 // TCP
             } else if (test.PROTO_ID == "1") {
                 if (test.PORT == 80) {
-                    new HTTPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, proxy, function (error, warning) {
-                        displayResult(this.test.TEST_ID, error, warning)
+                    new HTTPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, proxy, function (error, warning, success) {
+                        displayResult(this.test.TEST_ID, error, warning, success)
                     }.bind({test: test}));
                 } else if (test.PORT == 443) {
-                    new HTTPSTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, proxy, function (error, warning) {
-                        displayResult(this.test.TEST_ID, error, warning)
+                    new HTTPSTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, proxy, function (error, warning, success) {
+                        displayResult(this.test.TEST_ID, error, warning, success)
                     }.bind({test: test}));
                     //displayResult(test.TEST_ID, null, null, true);
 
                 } else {
                     if (proxy.configured) {
-                        displayResult(test.TEST_ID, null, null, true);
+                        displayResult(test.TEST_ID, null, null, null, true);
                     } else {
-                        new TCPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, function (error, warning) {
-                            displayResult(this.test.TEST_ID, error, warning)
+                        new TCPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, function (error, warning, success) {
+                            displayResult(this.test.TEST_ID, error, warning, success)
                         }.bind({test: test}));
                     }
                 }
@@ -249,7 +249,7 @@ function startFirewallTest(type) {
  ====================== QTIP =========================
  =================================================== */
 
-function displayResult(testId, error, warning, notWithProxy) {
+function displayResult(testId, error, warning, success, notWithProxy) {
     var qtipText = "";
     var qtipTitle = "";
     var qtipClass = "";
@@ -270,7 +270,7 @@ function displayResult(testId, error, warning, notWithProxy) {
         $("#firewall-entry-" + testId).html("<i id='result-" + testId + "' class='fa fa-exclamation-circle' style='color: dodgerblue'></i>");
     } else {
         qtipTitle = "Success";
-        qtipText = "";
+        qtipText = success;
         qtipClass = "success";
         $("#firewall-entry-" + testId).html("<i id='result-" + testId + "' class='fa fa-check-circle' style='color: green'></i>");
     }
@@ -342,7 +342,7 @@ function proxyConfiguration(type) {
     var htmlString =
         '<div style="width: 70%; margin: auto"><h4>Proxy Configuration</h4>' +
         '<hr>' +
-        '<input type="checkbox" name="proxy_conf" id="proxy_conf" onclick="enableProxyConf(this.checked)"/>' +
+        '<input type="checkbox" class="chkbox" name="proxy_conf" id="proxy_conf" onclick="enableProxyConf(this.checked)"/> ' +
         '<label for="proxy_conf"> Enable Proxy</label>' +
         '<br>' +
         '<label for="host" class="proxy_conf_label disabled"> Proxy IP Address/Hostname:</label>' +
@@ -350,7 +350,7 @@ function proxyConfiguration(type) {
         '<label for="port" class="proxy_conf_label disabled"> Proxy Port:</label>' +
         '<input type="number" size="5" class="form-control proxy_conf_input" onkeypress="return proxyPortChange(event)" id="proxy_port" disabled="disabled" value="' + proxy.port + '"/>' +
         '<hr>' +
-        '<input type="checkbox" name="proxy_auth" id="proxy_auth"  onclick="enableProxyAuth(this.checked)" class="proxy_conf_input">' +
+        '<input type="checkbox" class="chkbox" name="proxy_auth" id="proxy_auth"  onclick="enableProxyAuth(this.checked)" class="proxy_conf_input"> ' +
         '<label for="proxy_auth" class="proxy_conf_label disabled"> Enable Proxy Authentication</label>' +
         '<br>' +
         '<label for="proxy_user" class="proxy_auth_label disabled">Username:</label>' +
@@ -360,8 +360,8 @@ function proxyConfiguration(type) {
         '</div>';
     document.getElementById("firewall-test").innerHTML = htmlString;
     document.getElementById("firewall-action").innerHTML =
-        '<input type="button" id="button-back" class="back btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')" value="Cancel"/>' +
-        '<input type="button" id="button-next" class="next btn btn-default" onclick="saveProxy(\'' + type + '\')" value="Save"/>';
+        '<button id="button-back" class="back btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')">Cancel</button>' +
+        '<button id="button-next" class="next btn btn-default" onclick="saveProxy(\'' + type + '\')">Save</button>';
 
     document.getElementById("proxy_conf").checked = proxy.configured;
     document.getElementById("proxy_auth").checked = proxy.auth;

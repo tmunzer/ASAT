@@ -6,17 +6,18 @@ function UDPTest(host, port, process, asatConsole, callback){
     var hexMessage = new Buffer(message, 'hex');
     var socketClosed = false;
     var error = null;
-
+    var warning = null;
+    var success = null;
     var retry = 0;
     var maxRetry = 1;
 
     asatConsole.info("UDP " + process + " - Test for " + host + ":" + port);
-    runUdpTest(function queueCallback(error, warning){
+    runUdpTest(function queueCallback(error, warning, success){
         if (error && retry < maxRetry){
             retry ++;
             asatConsole.warning("UDP " + process + " - Retry  for " + host + ":" + port);
             runUdpTest(queueCallback)
-        } else callback(error, warning);
+        } else callback(error, warning, success);
     });
 
 
@@ -25,10 +26,11 @@ function UDPTest(host, port, process, asatConsole, callback){
         socketClosed = true;
         if (err) error = err;
         asatConsole.debug("UDP " + process + " - Socket closed");
-        udpCallback(error);
+        udpCallback(error, warning, success);
     });
     client.on('message', function(msg, rinfo) {
         asatConsole.info("UDP " + process + " - CAPWAP ECHO REPLY received from  " + rinfo.address + ":" + rinfo.port);
+        success = "Got CAPWAP ECHO REPLY from server";
         client.close();
     });
     client.on('error', function(err){

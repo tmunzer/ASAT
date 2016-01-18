@@ -9,8 +9,8 @@ function HTTPSTest(host, port, process, asatConsole, proxy, callback) {
     var maxRetry = 1;
 
     // configure the HTTP option to connect to the proxy server
-    if (proxy.configured){
-        if (proxy.auth){
+    if (proxy.configured) {
+        if (proxy.auth) {
             var username = proxy.user;
             var password = proxy.password;
             var auth = 'Basic ' + new Buffer(username + ':' + password).toString('base64');
@@ -21,7 +21,7 @@ function HTTPSTest(host, port, process, asatConsole, proxy, callback) {
                 path: host + ":" + port,
                 headers: {
                     host: host,
-                    "Proxy-Authorization" : auth
+                    "Proxy-Authorization": auth
                 }
             };
         } else {
@@ -56,80 +56,67 @@ function HTTPSTest(host, port, process, asatConsole, proxy, callback) {
                 // If proxy is configured, try firstly to connect to the Proxy
                 if (proxy.configured) {
                     asatConsole.info("TCP " + process + " - Proxy connection to " + proxy.host + ":" + proxy.port);
-
-                    proxyConnection(address, function queueCallbackProxy(err, warn){
-                        if (err && proxyRetry < maxRetry){
-                            proxyRetry ++;
+                    proxyConnection(address, function queueCallbackProxy(error, warning, success) {
+                        if (error && proxyRetry < maxRetry) {
+                            proxyRetry++;
                             asatConsole.warning("TCP " + process + " - Retry proxy connection to " + proxy.host + ":" + proxy.port);
                             proxyConnection(address, queueCallbackProxy)
-                        } else callback(err, warn);
+                        } else callback(error, warning, success);
                     });
-                // Otherwise (no proxy configured), try the HTTPS connection directly
+                    // Otherwise (no proxy configured), try the HTTPS connection directly
                 } else {
                     asatConsole.info("TCP " + process + " - Test for " + host + ":" + port);
-                    runHttpsRequest(address, httpsOptions, function queueCallbackHttps(error, warning){
-                        if (error && httpsRetry < maxRetry){
-                            httpsRetry ++;
+                    runHttpsRequest(address, httpsOptions, function queueCallbackHttps(error, warning, success) {
+                        if (error && httpsRetry < maxRetry) {
+                            httpsRetry++;
                             asatConsole.warning("TCP " + process + " - Retry  for " + host + ":" + port);
                             runHttpsRequest(address, httpsOptions, queueCallbackHttps)
-                        } else callback(error, warning);
+                        } else callback(error, warning, success);
                     });
                 }
             }
         }
     );
 
-    function proxyConnection(address, proxyCallback){
-        var error = null;
-        var warning = null;
+    function proxyConnection(address, proxyCallback) {
+        var httpResult = {error: null, warning: null, success: null};
+        var data = "";
 
-        http.request(proxyOptions, function(res){
-            var data = "";
+        http.request(proxyOptions, function (res) {
             res.setEncoding = 'utf8';
-            res.on('data', function(chunk) {
-                asatConsole.debug("TCP " + process + " - Getting data from server");
+            console.log(res);
+            res.on('data', function (chunk) {
                 data += chunk;
-            }).on('end', function () {
-                if (httpCode.hasOwnProperty(res.statusCode.toString())) {
-                    if (res.statusCode >= 400 && res.statusCode < 500) {
-                        error = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
-                        asatConsole.error("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                    } else if (res.statusCode < 200 || res.statusCode >= 300) {
-                        warning = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
-                        asatConsole.warning("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                    } else {
-                        asatConsole.info("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                    }
-                }
+            }).on("end", function () {
+                httpResult = getHttpCode(res, process);
             });
         }).on('connect', function (res, socket) {
-            asatConsole.info("TCP " + process + " - Connected with Proxy server");
-
-            // should check res.statusCode here
-            httpsOptions = {
-                host: host,
-                socket: socket,
-                path: "https://" + host + "/",
-                agent: false  // create a new agent just for this one request
-            };
-            asatConsole.info("TCP " + process + " - Test for " + host + ":" + port);
-            runHttpsRequest(address, httpsOptions, function queueCallbackHttpsWithProxy(err, warn){
-                error = err;
-                warning = warn;
-                if (error && httpsRetry < maxRetry){
-                    httpsRetry ++;
-                    asatConsole.warning("TCP " + process + " - Retry  for " + host + ":" + port);
-                    runHttpsRequest(address, httpsOptions, queueCallbackHttpsWithProxy)
-                } else proxyCallback(error, warning);
-            });
+            http.log(res);
+            httpResult = getHttpCode(res, process);
+            if (httpResult.success) {
+                asatConsole.info("TCP " + process + " - Connected with Proxy server");
+                httpsOptions = {
+                    host: host,
+                    socket: socket,
+                    path: "https://" + host + "/",
+                    agent: false  // create a new agent just for this one request
+                };
+                asatConsole.info("TCP " + process + " - Test for " + host + ":" + port);
+                runHttpsRequest(address, httpsOptions, function queueCallbackHttpsWithProxy(httpsError, httpsWarning, httpsSuccess) {
+                    if (httpsError && httpsRetry < maxRetry) {
+                        httpsRetry++;
+                        asatConsole.warning("TCP " + process + " - Retry  for " + host + ":" + port);
+                        runHttpsRequest(address, httpsOptions, queueCallbackHttpsWithProxy)
+                    } else proxyCallback(httpsError, httpsWarning, httpsSuccess);
+                });
+            }
         }).on('error', function (err) {
-            error = err;
-            asatConsole.error("TCP " + process + " - Error while connecting to proxy" );
-            asatConsole.error("TCP " + process + " - Connection to " + host + ":" + port + " failed");
+            httpResult.error = "Connexion to proxy failed";
+            asatConsole.error("TCP " + process + " - Error while connecting to proxy");
         }).on('close', function () {
-            if (error) {
+            if (httpResult.error) {
                 asatConsole.error("TCP " + process + " - Connection to Proxy " + proxy.host + ":" + proxy.port + " failed");
-                proxyCallback(error, warning);
+                proxyCallback(httpResult.error, httpResult.warning, httpResult.success);
             }
         }).end();
 
@@ -137,9 +124,8 @@ function HTTPSTest(host, port, process, asatConsole, proxy, callback) {
 
 
     function runHttpsRequest(address, options, httpsCallback) {
-        var error = null;
-        var warning = null;
-        var data = null;
+        var httpsResult = {error: null, warning: null, success: null};
+        var data = "";
 
         asatConsole.debug('TCP ' + process + ' - Trying to establish a connection to ' + address + ':' + port);
 
@@ -149,31 +135,20 @@ function HTTPSTest(host, port, process, asatConsole, proxy, callback) {
                 data += chunk;
             });
             res.on('end', function () {
-                if (httpCode.hasOwnProperty(res.statusCode.toString())) {
-                    if (httpCode.hasOwnProperty(res.statusCode.toString())) {
-                        if (res.statusCode >= 400 && res.statusCode < 500) {
-                            error = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
-                            asatConsole.error("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                        } else if (res.statusCode < 200 || res.statusCode >= 300) {
-                            warning = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
-                            asatConsole.warning("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                        } else {
-                            asatConsole.info("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                        }
-                    }
-                }
+                httpsResult = getHttpCode(res, process);
             });
         });
         req.on('error', function (err) {
             if (err.message != "socket hang up" && err.message != "write EPROTO") {
-                error = err;
+                httpsResult.error = err;
                 asatConsole.error("TCP " + process + " - " + err);
             }
             req.end();
         }).on('close', function () {
-            if (error) asatConsole.error("TCP " + process + " - Connection to " + host + ":" + port + " failed");
+            if (httpsResult.error) asatConsole.error("TCP " + process + " - Connection to " + host + ":" + port + " failed");
             else asatConsole.info('TCP ' + process + ' - Connection established to ' + host + ':' + port);
-            httpsCallback(error, warning);
+            console.log(httpsResult);
+            httpsCallback(httpsResult.error, httpsResult.warning, httpsResult.success);
         });
     }
 

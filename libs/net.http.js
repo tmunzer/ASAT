@@ -6,8 +6,8 @@ function HTTPTest(host, port, process, asatConsole, proxy,  callback) {
     var maxRetry = 1;
 
     var data = "";
-    var error = null;
-    var warning = null;
+    var httpResult ={error: null, warning: null, success: null};
+
     // make a request to a tunneling proxy
     var options;
     if (proxy.configured){
@@ -52,12 +52,12 @@ function HTTPTest(host, port, process, asatConsole, proxy,  callback) {
     }
 
     asatConsole.info("TCP " + process + " - Test for " + host + ":" + port);
-    runHttpTest(function queueCallback(error, warning){
+    runHttpTest(function queueCallback(error, warning, success){
         if (error && retry < maxRetry){
             retry ++;
             asatConsole.warning("TCP " + process + " - Retry  for " + host + ":" + port);
             runHttpTest(queueCallback)
-        } else callback(error, warning);
+        } else callback(error, warning, success);
     });
 
 
@@ -80,32 +80,22 @@ function HTTPTest(host, port, process, asatConsole, proxy,  callback) {
                         data += chunk;
                     });
                     res.on('end', function(){
-                        if (httpCode.hasOwnProperty(res.statusCode.toString())){
-                            if (res.statusCode >= 400 && res.statusCode < 500) {
-                                error = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
-                                asatConsole.error("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                            } else if (res.statusCode < 200 || res.statusCode >= 300){
-                                warning = "Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode];
-                                asatConsole.warning("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                            } else {
-                                asatConsole.info("TCP " + process + " - Got HTTP " + res.statusCode + ": " + httpCode[res.statusCode]);
-                            }
-                        }
+                        httpResult = getHttpCode(res, process);
                     });
                 });
 
                 req.on('error', function (err) {
                     if (err.message != "socket hang up" && err.message != "write EPROTO"){
-                        error = err;
+                        httpResult.error = err;
                         asatConsole.error("TCP " + process + " - " + err);
                     }
                     req.end();
                 });
 
                 req.on('close', function () {
-                    if (error) asatConsole.error("TCP " + process + " - Connection to " + host + ":" + port + " failed");
+                    if (httpResult.error) asatConsole.error("TCP " + process + " - Connection to " + host + ":" + port + " failed");
                     else asatConsole.info('TCP ' + process + ' - Connection established to ' + host + ':' + port);
-                    httpCallback(error, warning);
+                    httpCallback(httpResult.error, httpResult.warning, httpResult.success);
                 });
 
             }

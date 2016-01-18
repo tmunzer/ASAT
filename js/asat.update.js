@@ -23,7 +23,7 @@ function displayUpdate() {
             "</article>" +
             "<article>" +
             "<div>" +
-            "<div id='progress-bar' class='progress' style='width:75%; margin: 0 2em; float: left;'>" +
+            "<div id='progress-bar' class='progress'>" +
             "</div>" +
             "<a href='#' id='cancelDl' class='cancelDL-disabled'><i class='fa fa-close'> Cancel</i></a>" +
             "</div>" +
