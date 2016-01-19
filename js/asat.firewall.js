@@ -10,14 +10,31 @@ var proxy = {
     password: ""
 };
 var hm6 = {
-    dc_id: 0,
+    dc_type: "hm",
     dc_area: "emea",
     cluster: "51"
 };
 var hmng = {
-    dc_id: 0,
     dc_area: 'ie'
 };
+
+var hm6DcList = {};
+var hm6DcTypeList = {};
+var hmNgDcList = {};
+
+function initFirewallTest() {
+    db.Hm6DC.getArray(function (res) {
+        hm6DcList = res;
+        db.Hm6Type.getArray(function (res) {
+            hm6DcTypeList = res;
+            db.HmNgDC.getArray(function (res) {
+                hmNgDcList = res;
+                displayFirewallTest();
+            })
+        })
+    })
+}
+
 
 /* ===================================================
  ============= FW tests (HM or DEVICES) ============
@@ -145,20 +162,26 @@ function displayFirewallDestinationsHTML(type, optionString) {
 }
 function displayFirewallDestinationsOptions(type, options) {
     var htmlString = "";
-    if (options.indexOf("hm6") >= 0) displayHm6Option(function (res) {
-        htmlString = res;
-        if (options.indexOf("hmng") >= 0) displayHmNgOption(function (res) {
-            htmlString += res;
-            displayFirewallDestinationsHTML(type, htmlString);
-        });
-        else displayFirewallDestinationsHTML(type, htmlString);
-
-    });
-    else if (options.indexOf("hmng") >= 0) displayHmNgOption(function (res) {
-        htmlString = res;
-        displayFirewallDestinationsHTML(type, htmlString);
-    });
-    else displayFirewallDestinationsHTML(type, htmlString);
+    if (options.indexOf("hm6") >= 0 || options.indexOf("hmng") >= 0) {
+        htmlString +=
+            "<hr>" +
+            "<table class='table table-condensed'>" +
+            "<thead>" +
+            "<tr>" +
+            "<th></th>" +
+            "<th>Server Type</th>" +
+            "<th>Datacenter</th>" +
+            "<th>Cluster Number</th>" +
+            "</tr>" +
+            "</thead>" +
+            "<tbody>";
+        if (options.indexOf("hm6") >= 0) htmlString += displayHm6Option();
+        if (options.indexOf("hmng") >= 0) htmlString += displayHmNgOption();
+        htmlString +=
+            "</tbody>" +
+            "</table>";
+    }
+    displayFirewallDestinationsHTML(type, htmlString);
 }
 
 function displayFirewallDestinations(type) {
@@ -370,7 +393,7 @@ function proxyConfiguration(type) {
 
 function proxyPortChange(event) {
     console.log(event);
-    if (event.charCode >= 48 && event.charCode <= 57){
+    if (event.charCode >= 48 && event.charCode <= 57) {
         if (event.target.value == "") return true;
         else if (event.target.valueAsNumber > 0 && event.target.valueAsNumber <= 65535) return true;
     }
@@ -433,34 +456,77 @@ function saveProxy(type) {
 /* ===================================================
  ====================== HM6 PARAMs ===================
  =================================================== */
-function displayHm6Option(callback) {
+function displayHm6Option() {
+    return "<tr>" +
+        "<th>" +
+        "HM 6" +
+        "</th>" +
+        "<td id='hm6DcType'>" +
+        hm6TypeDisplay() +
+        "</td>" +
+        "<td id='hm6DcArea'>" +
+        hm6DcDisplay() +
+        "</td>" +
+        "<td>" +
+        "<input type='number' size='4' id='hm6_cluster' onkeypress='return event.charCode >= 48 && event.charCode <= 57' oninput='hm6ClusterChange()' value='" + hm6.cluster + "'/>" +
+        "</td>" +
+        "</tr>";
+}
+
+function hm6TypeDisplay() {
     var htmlString =
-        "<br>" +
-        "<span>HiveManager 6 Datacenter </span>" +
-        "<select id='hm6_dc' onchange='hm6DcChange()'>";
-    db.Hm6DC.getAll(function (err, res) {
-        for (var i in res) {
-            if (hm6.dc_id == res[i].id) htmlString += "<option value='" + res[i].id + "' data-area='" + res[i].HOST_VALUE + "' selected='selected'>" + res[i].AREA + "</option>";
-            else htmlString += "<option value='" + res[i].id + "' data-area='" + res[i].HOST_VALUE + "'>" + res[i].AREA + "</option>";
+        '<div  class="dropdown">' +
+        '<button id="hm6DcTypeDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+        '<span class="list">' + hm6DcTypeList[hm6.dc_type] + '</span>' +
+        '<span class="caret"></span>' +
+        '</button>' +
+        '<ul class="dropdown-menu" aria-labelledby="dLabel">';
+    for (var hm6DcType in hm6DcTypeList) {
+        if (hm6DcType != hm6.dc_type) {
+            htmlString += '<li onclick="hm6TypeChange(\'' + hm6DcType + '\')" data-type="' + hm6DcType + '"><a href="#">' + hm6DcTypeList[hm6DcType] + '</a></li>';
         }
-        htmlString +=
-            "</select>" +
-            "<span> and cluster number </span>" +
-            "<input type='number' size='4' id='hm6_cluster' onkeypress='return event.charCode >= 48 && event.charCode <= 57' oninput='hm6ClusterChange()' value='" + hm6.cluster + "'/>";
-        callback(htmlString);
-    })
-}
-
-function hm6DcChange() {
-    var myselect = document.getElementById("hm6_dc");
-    if (myselect) {
-        hm6.dc_id = myselect.options[myselect.selectedIndex].value;
-        hm6.dc_area = myselect.options[myselect.selectedIndex].dataset.area;
-
-        updateHm6();
     }
-
+    htmlString +=
+        '</ul>' +
+        '</div>';
+    return htmlString;
 }
+
+function hm6TypeChange(type) {
+    if (type) {
+        hm6.dc_type = type;
+        $("#hm6DcType").html(hm6TypeDisplay());
+        $(':focus').blur();
+    }
+    updateHm6();
+}
+
+function hm6DcDisplay(){
+    var htmlString =
+        '<div class="dropdown">' +
+        '<button id="hm6DcAreaDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+        '<span class="list">' + hm6DcList[hm6.dc_area] + '</span>' +
+        '<span class="caret"></span>' +
+        '</button>' +
+        '<ul class="dropdown-menu" aria-labelledby="dLabel">';
+    for (var hm6Dc in hm6DcList) {
+        if (hm6Dc != hm6.dc_area) htmlString += '<li onclick="hm6DcChange(\'' + hm6Dc + '\')"><a href="#">' + hm6DcList[hm6Dc] + "</a></li>";
+    }
+    htmlString +=
+        '</ul>' +
+        '</div>';
+    return htmlString;
+}
+
+function hm6DcChange(area) {
+    if (area) {
+        hm6.dc_area = area;
+        $("#hm6DcArea").html(hm6DcDisplay());
+    }
+    updateHm6();
+}
+
+
 function hm6ClusterChange() {
     if (document.getElementById('hm6_cluster')) {
         var cluster = document.getElementById('hm6_cluster').value;
@@ -491,26 +557,42 @@ function updateHm6() {
  ====================== HMNG PARAMs ==================
  =================================================== */
 function displayHmNgOption(callback) {
-    var htmlString =
-        "<span>HiveManager NG Datacenter: </span>" +
-        "<select id='hmng_dc' onchange='hmNgDcChange()'>";
-    db.HmNgDC.getAll(function (err, res) {
-        for (var i in res) {
-            if (hmng.dc_id == res[i].id) htmlString += "<option value='" + res[i].id + "' data-area='" + res[i].HOST_VALUE + "' selected='selected'>" + res[i].AREA + "</option>";
-            else htmlString += "<option value='" + res[i].id + "' data-area='" + res[i].HOST_VALUE + "'>" + res[i].AREA + "</option>";
-        }
-        htmlString += "</select>";
-        callback(htmlString);
-    })
+    return "<tr>" +
+        "<th>" +
+        "HM NG" +
+        "</th>" +
+        "<td>" +
+        "</td>" +
+        "<td id='hmNgDcArea'>" +
+        hmNgDcDisplay() +
+        "</td>" +
+        "<td>" +
+        "</td>" +
+        "</tr>";
 }
-function hmNgDcChange() {
-    var myselect = document.getElementById("hmng_dc");
-    if (myselect) {
-        hmng.dc_id = myselect.options[myselect.selectedIndex].value;
-        hmng.dc_area = myselect.options[myselect.selectedIndex].dataset.area;
-        updateHmNg();
-
+function hmNgDcDisplay() {
+    var htmlString =
+        '<div class="dropdown">' +
+        '<button id="hm6DcAreaDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
+        '<span class="list">' + hmNgDcList[hmng.dc_area] + '</span>' +
+        '<span class="caret"></span>' +
+        '</button>' +
+        '<ul class="dropdown-menu" aria-labelledby="dLabel">';
+    for (var hmNgDc in hmNgDcList) {
+        if (hmNgDc != hmng.dc_area) htmlString += '<li onclick="hmNgDcChange(\'' + hmNgDc + '\')"><a href="#">' + hmNgDcList[hmNgDc] + "</a></li>";
     }
+    htmlString +=
+        '</ul>' +
+        '</div>';
+    return htmlString;
+}
+function hmNgDcChange(hmNgDc) {
+    if (hmNgDc){
+        hmng.dc_area = hmNgDc;
+        $("#hmNgDcArea").html(hmNgDcDisplay());
+    }
+    updateHmNg();
+
 }
 
 function updateHmNg() {

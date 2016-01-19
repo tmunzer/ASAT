@@ -6,4 +6,5 @@ module.exports.Device = require('./sqlite.deviceTest');
 module.exports.HmVersion = require('./sqlite.hm_version');
 module.exports.HiveManager = require('./sqlite.hivemanagerTest');
 module.exports.Hm6DC = require("./sqlite.hm6_dc");
+module.exports.Hm6Type = require("./sqlite.hm6_type");
 module.exports.HmNgDC = require("./sqlite.hmng_dc");

@@ -6,6 +6,18 @@ function Hm6Dc(row){
     this.HOST_VALUE = row.HOST_VALUE;
 }
 
+module.exports.getArray = function(callback){
+    var hm6DcArray = {};
+    this.getAll(function(err, res){
+        if (err) console.log(err);
+        else {
+            for (var i in res){
+                hm6DcArray[res[i].HOST_VALUE] = res[i].AREA;
+            }
+        }
+        callback(hm6DcArray);
+    })
+};
 
 module.exports.getAll = function(callback){
     db.findAll("HM6_DC", null, null, function(err, res){

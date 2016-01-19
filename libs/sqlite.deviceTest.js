@@ -16,7 +16,7 @@ function DeviceTest(){
 }
 
 DeviceTest.prototype.getHost = function(hm6, hmng){
-    if (this.SERVICE_ID == 1) return this.HOST.replace("%dc", hm6.dc_area).replace("%cluster", hm6.cluster);
+    if (this.SERVICE_ID == 1) return this.HOST.replace("%type", hm6.dc_type).replace("%dc", hm6.dc_area).replace("%cluster", hm6.cluster);
     else if (this.SERVICE_ID == 2) return this.HOST.replace("%dc", hmng.dc_area);
     else return this.HOST;
 };

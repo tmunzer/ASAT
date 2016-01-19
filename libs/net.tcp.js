@@ -1,6 +1,6 @@
 function TCPTest(host, port, process, asatConsole, callback) {
     var net = require('net');
-    var client = new net.Socket();
+
     var ip = "";
     var error = null;
     var warning = null;
@@ -19,6 +19,8 @@ function TCPTest(host, port, process, asatConsole, callback) {
     });
 
     function runTcpTest(tcpCallback) {
+         var client = new net.Socket();
+
         client.on('data', function (data) {
             asatConsole.debug('TCP ' + process + ' - received message from server: ' + data.toString());
             success = "Received data from server";
