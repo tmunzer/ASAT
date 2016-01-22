@@ -54,12 +54,12 @@
                 </a>
             </li>
             <li>
-                <a href="#" onclick="main('deployement')" id="deployement-button" class="main-button">
+                <a href="#" onclick="main('deployment')" id="deployment-button" class="main-button">
                             <span class="fa-stack fa-lg">
                               <i class="fa fa-circle-thin fa-stack-2x"></i>
                               <i class="fa fa-cog fa-stack-1x "></i>
                             </span>
-                    Deployement
+                    Deployment
                 </a>
             </li>
             <li>
@@ -135,7 +135,7 @@
 <!-- =================== FIREWALL =============== -->
 <section class="main no-console" id="firewall" style="display: none">
     <article>
-        <table class="breadcrumb-table">
+        <table class="breadcrumb-table firewall">
             <tbody>
             <tr>
                 <td>
@@ -148,7 +148,7 @@
                     <span>Test</span>
                 </td>
             </tr>
-            <tr class="breadcrumb-row">
+            <tr class="breadcrumb-row firewall">
                 <td>
                         <i class="fa fa-circle fa-lg firewall-button" id="firewall-test-type"></i>
                 </td>
@@ -163,20 +163,51 @@
         </table>
     </article>
     <article id="firewall-test">
-        <div class="list-group">
-            <a href="#" class="list-group-item active">
-                <h4 class="list-group-item-heading">List group item heading</h4>
-
-                <p class="list-group-item-text">...</p>
-            </a>
-            <a href="#" class="list-group-item">
-                <h4 class="list-group-item-heading">List group item heading</h4>
-
-                <p class="list-group-item-text">...</p>
-            </a>
-        </div>
     </article>
     <article id="firewall-action" class="action no-console">
+    </article>
+
+</section>
+<!-- ============================================ -->
+<!-- =================== DEPLOYMENT ============= -->
+<section class="main no-console" id="deployment" style="display: none">
+    <article>
+        <table class="breadcrumb-table deployment">
+            <tbody>
+            <tr>
+                <td>
+                    <span>Find</span>
+                </td>
+                <td>
+                    <span>Common</span>
+                </td>
+                <td>
+                    <span>Network</span>
+                </td>
+                <td>
+                    <span>Deploy</span>
+                </td>
+            </tr>
+            <tr class="breadcrumb-row deployment">
+                <td>
+                    <i class="fa fa-circle fa-lg firewall-button" id="deployment-find"></i>
+                </td>
+                <td>
+                    <i class="fa fa-circle-o fa-lg firewall-button" id="deployment-common"></i>
+                </td>
+                <td>
+                    <i class="fa fa-circle-o fa-lg firewall-button" id="deployment-network"></i>
+                </td>
+                <td>
+                    <i class="fa fa-circle-o fa-lg firewall-button" id="deployment-deploy"></i>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </article>
+    <article id="deployment-window">
+    </article>
+    <article id="deployment-action" class="action no-console">
     </article>
 
 </section>
@@ -233,6 +264,9 @@
             case "firewall":
                 initFirewallTest();
                 break;
+            case "deployment":
+                displayDeployment();
+                break;
             case "license":
                 displayLicense();
                 break;
@@ -251,9 +285,7 @@
 <!-- ============================================ -->
 <!-- ================= UPDATE =================== -->
 <script type="text/javascript" src='js/asat.update.js'></script>
-<script>
-    $("#current-release").text(currentRelease);
-</script>
+
 <!-- ============================================ -->
 <!-- ================= FIREWALL ================= -->
 <script type="text/javascript" src='libs/net.udp.js'></script>
@@ -262,6 +294,10 @@
 <script type="text/javascript" src='libs/net.http.js'></script>
 <script type="text/javascript" src='libs/net.https.js'></script>
 <script type="text/javascript" src='js/asat.firewall.js'></script>
+
+<!-- ============================================ -->
+<!-- ================= DEPLOYMENT ================= -->
+<script type="text/javascript" src='js/asat.deployment.js'></script>
 
 </body>
 </html>

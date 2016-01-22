@@ -1,6 +1,11 @@
 var currentRelease = "0.1.4";
 var buildDate = "January 17, 2016";
-var platform = "macos";
+
+var platform = process.platform;
+if (process.platform == "darwin") platform = "macos";
+
+var architecture = process.arch;
+
 var githubFileName = "asat-macos.nw";
 
 var https = require('https');
@@ -16,14 +21,14 @@ function displayUpdate() {
             "</div>" +
             "<span>Version </span><span class='badge'>" + currentRelease + "</span>" +
             "<br>" +
-            "<span>Platform: " + platform + "</span>" +
+            "<span>Platform: " + platform + "-" + architecture + "</span>" +
             "<br>" +
             "<span>Release Date: " + buildDate + "</span>" +
             "<hr>" +
             "</article>" +
             "<article>" +
             "<div>" +
-            "<div id='progress-bar' class='progress'>" +
+            "<div id='progress-bar' class='progress update'>" +
             "</div>" +
             "<a href='#' id='cancelDl' class='cancelDL-disabled'><i class='fa fa-close'> Cancel</i></a>" +
             "</div>" +

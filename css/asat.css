@@ -173,20 +173,29 @@ article.action.console {
 .breadcrumb-row:after {
     content: "";
     z-index: -1;
-    width: 66%;
-    left: 17%;
-    top: 75%;
     height: 0;
+    top: 75%;
     position: absolute;
     border-top: 2px solid #3694D1;
+}
+.breadcrumb-row.firewall:after {
+    width: 66%;
+    left: 17%;
+}
+.breadcrumb-row.deployment:after {
+    width: 75%;
+    left: 12%;
 }
 .breadcrumb-row i {
     position: relative;
     background-color: #F0F0F4;
     color: #3694D1;
 }
-.breadcrumb-table td {
+.breadcrumb-table.firewall td {
     width: 33%;
+}
+.breadcrumb-table.deployment td {
+    width: 25%;
 }
 /*============================================== /
 / ================== FIREWALL ================== /
@@ -201,6 +210,8 @@ button {
     border: 0 !important;
     box-shadow: 0 !important;
     border-radius: 0 !important;
+    margin: 0 1em;
+    padding: 0 1em;
 }
 button:hover {
     background-color: #166EB7 !important;
@@ -219,6 +230,10 @@ input.chkbox {
 input {
     border: 1px solid #CCCCCC!important;
 }
+/*============================================== /
+/ ================== UPDATE ================== /
+/ ============================================== */
+
 /*============================================== /
 / ================== UPDATE ================== /
 / ============================================== */
@@ -244,10 +259,16 @@ hr.history {
 }
 
 .progress {
-    width:75%; margin: 0 2em; float: left;
+    width:75%;
     border: 1px solid #939598;
 }
-
+.progress.update {
+    margin: 0 2em;
+    float: left;
+}
+.progress.deployment {
+    margin: auto;
+}
 /*============================================== /
 / ================== LICENSE =================== /
 / ============================================== */

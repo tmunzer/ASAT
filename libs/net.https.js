@@ -91,7 +91,6 @@ function HTTPSTest(host, port, process, asatConsole, proxy, callback) {
                 httpResult = getHttpCode(res, process);
             });
         }).on('connect', function (res, socket) {
-            http.log(res);
             httpResult = getHttpCode(res, process);
             if (httpResult.success) {
                 asatConsole.info("TCP " + process + " - Connected with Proxy server");

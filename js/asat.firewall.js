@@ -370,8 +370,10 @@ function proxyConfiguration(type) {
         '<br>' +
         '<label for="host" class="proxy_conf_label disabled"> Proxy IP Address/Hostname:</label>' +
         '<input type="text" class="form-control proxy_conf_input" id="proxy_host" disabled="disabled" value="' + proxy.host + '"/>' +
+        '<div class="form-group" id="formGroupProxyPort">' +
         '<label for="port" class="proxy_conf_label disabled"> Proxy Port:</label>' +
-        '<input type="number" size="5" class="form-control proxy_conf_input" onkeypress="return proxyPortChange(event)" id="proxy_port" disabled="disabled" value="' + proxy.port + '"/>' +
+        '<input type="number" size="5" class="form-control proxy_conf_input" onkeypress="return proxyPortKeyPress(event)" onchange="proxyPortChange(event)" id="proxy_port" disabled="disabled" value="' + proxy.port + '"/>' +
+        '</div>' +
         '<hr>' +
         '<input type="checkbox" class="chkbox" name="proxy_auth" id="proxy_auth"  onclick="enableProxyAuth(this.checked)" class="proxy_conf_input"> ' +
         '<label for="proxy_auth" class="proxy_conf_label disabled"> Enable Proxy Authentication</label>' +
@@ -391,15 +393,32 @@ function proxyConfiguration(type) {
     enableProxyConf(proxy.configured);
 }
 
-function proxyPortChange(event) {
-    console.log(event);
-    if (event.charCode >= 48 && event.charCode <= 57) {
-        if (event.target.value == "") return true;
-        else if (event.target.valueAsNumber > 0 && event.target.valueAsNumber <= 65535) return true;
-    }
-    return false;
 
+function proxyPortChange() {
+    if (document.getElementById('proxy_port')) {
+        var port = document.getElementById('proxy_port').value;
+        if (port < 0 || port > 65535) {
+            document.getElementById('formGroupProxyPort').className = "form-group has-warning";
+            $('#button-next').prop("disabled", true);
+        } else {
+            proxy.port = port;
+            document.getElementById('formGroupProxyPort').className = "form-group";
+            $('#formGroupProxyPort').removeClass("has-warning");
+            $('#button-next').prop("disabled", false);
+            return true;
+        }
+
+    }
 }
+function proxyPortKeyPress(event) {
+    if (event.charCode >= 48 && event.charCode <= 57) {
+        if (event.target.valueAsNumber < 0) {
+            document.getElementById('proxy_port').value = 0;
+            return false;
+        } else return true;
+    } else return false;
+}
+
 function enableProxyConf(proxy_conf_enable) {
     $(".proxy_conf_input").each(function () {
         $(this).prop("disabled", !proxy_conf_enable);
@@ -435,6 +454,7 @@ function enableProxyAuth(proxy_auth_enable) {
     });
 
 }
+
 function saveProxy(type) {
     if (document.getElementById("proxy_conf").checked) {
         proxy.configured = true;
@@ -501,7 +521,7 @@ function hm6TypeChange(type) {
     updateHm6();
 }
 
-function hm6DcDisplay(){
+function hm6DcDisplay() {
     var htmlString =
         '<div class="dropdown">' +
         '<button id="hm6DcAreaDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
@@ -542,6 +562,7 @@ function hm6ClusterChange() {
 
     }
 }
+
 function updateHm6() {
     var hm6Entries = document.getElementsByClassName("hm6");
     if (hm6Entries.length > 0) {
@@ -553,6 +574,7 @@ function updateHm6() {
         }
     }
 }
+
 /* ===================================================
  ====================== HMNG PARAMs ==================
  =================================================== */
@@ -570,6 +592,7 @@ function displayHmNgOption(callback) {
         "</td>" +
         "</tr>";
 }
+
 function hmNgDcDisplay() {
     var htmlString =
         '<div class="dropdown">' +
@@ -586,8 +609,9 @@ function hmNgDcDisplay() {
         '</div>';
     return htmlString;
 }
+
 function hmNgDcChange(hmNgDc) {
-    if (hmNgDc){
+    if (hmNgDc) {
         hmng.dc_area = hmNgDc;
         $("#hmNgDcArea").html(hmNgDcDisplay());
     }
