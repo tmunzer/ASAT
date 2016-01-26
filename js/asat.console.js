@@ -5,22 +5,27 @@ function Console(){
 Console.prototype.log = function(text){
     $('#console').append("<span> " + getTime() + " - " + text + "</span><br>");
     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+    console.log(text);
 };
 Console.prototype.error = function(text){
     $('#console').append("<span> " + getTime() + " - </span><span style='color: red;'>error</span><span> - " + text + "</span><br>");
     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+    console.log(text);
 };
 Console.prototype.warning = function(text){
     $('#console').append("<span> " + getTime() + " - </span><span style='color: orange;'>warning</span><span> - " + text + "</span><br>");
     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+    console.log(text);
 };
 Console.prototype.info = function(text){
     $('#console').append("<span> " + getTime() + " - </span><span style='color: green;'>info</span><span> - " + text + "</span><br>");
     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+    console.log(text);
 };
 Console.prototype.debug = function(text){
     $('#console').append("<span> " + getTime() + " - </span><span style='color: dodgerblue;'>debug</span><span> - " + text + "</span><br>");
     document.getElementById("console").scrollTop = document.getElementById("console").scrollHeight;
+    console.log(text);
 };
 
 function getTime(){

@@ -9,7 +9,11 @@ module.exports.connectDevice = function (ip, credentialas, commands, asatConsole
     conn.on('ready', function () {
         console.log('Client :: ready');
         conn.shell(function (err, stream) {
-            if (err) throw err;
+            if (err) {
+                asatConsole.error(err.message);
+                error = err.message;
+                conn.end();
+            }
             stream.on('close', function (code, signal) {
                 console.log('Stream :: close :: code: ' + code + ', signal: ' + signal);
                 conn.end();
@@ -28,12 +32,10 @@ module.exports.connectDevice = function (ip, credentialas, commands, asatConsole
                 });
         });
     }).on("error", function (err) {
-        console.log(err.message);
         asatConsole.debug(err.message);
-        callback(error, stdout);
+        callback(err.message, stdout);
     }).on("end", function () {
-        console.log("end");
-        callback(error, ip);
+        callback(error, stdout);
     }).connect({
         host: ip,
         port: 22,

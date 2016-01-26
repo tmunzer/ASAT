@@ -362,117 +362,118 @@ function displayProxyButton(type, options) {
 }
 
 function proxyConfiguration(type) {
-    var htmlString =
-        '<div style="width: 70%; margin: auto"><h4>Proxy Configuration</h4>' +
-        '<hr>' +
-        '<input type="checkbox" class="chkbox" name="proxy_conf" id="proxy_conf" onclick="enableProxyConf(this.checked)"/> ' +
-        '<label for="proxy_conf"> Enable Proxy</label>' +
-        '<br>' +
-        '<label for="host" class="proxy_conf_label disabled"> Proxy IP Address/Hostname:</label>' +
-        '<input type="text" class="form-control proxy_conf_input" id="proxy_host" disabled="disabled" value="' + proxy.host + '"/>' +
-        '<div class="form-group" id="formGroupProxyPort">' +
-        '<label for="port" class="proxy_conf_label disabled"> Proxy Port:</label>' +
-        '<input type="number" size="5" class="form-control proxy_conf_input" onkeypress="return proxyPortKeyPress(event)" onchange="proxyPortChange(event)" id="proxy_port" disabled="disabled" value="' + proxy.port + '"/>' +
+    document.getElementById("firewall-test").innerHTML =
+        '<div style="width: 70%; margin: auto">' +
+
+        '<div class="asat-group disabled proxy" onclick="enableParam(\'proxy\', event)">' +
+        '<span class="fa-stack fa-lg">' +
+        '<i class="fa fa-square-o fa-stack-2x"></i>' +
+        '<i class="fa fa-share-alt fa-stack-1x"></i>' +
+        '</span>' +
+        '<span class="proxy disabled asat-group-addon" >CAPWAP Proxy</span>' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">Host:</span>' +
+        '<input type="text" onchange="firewallProxyInputChange(\'proxy-host\')" class="form-control proxy" id="proxy-host" disabled="disabled" value="' + proxy.host + '"/>' +
         '</div>' +
-        '<hr>' +
-        '<input type="checkbox" class="chkbox" name="proxy_auth" id="proxy_auth"  onclick="enableProxyAuth(this.checked)" class="proxy_conf_input"> ' +
-        '<label for="proxy_auth" class="proxy_conf_label disabled"> Enable Proxy Authentication</label>' +
-        '<br>' +
-        '<label for="proxy_user" class="proxy_auth_label disabled">Username:</label>' +
-        '<input type="text" class="form-control proxy_auth_input" id="proxy_user" disabled="disabled" value="' + proxy.user + '"/>' +
-        '<label for="proxy_password" class="proxy_auth_label disabled">Password:</label>' +
-        '<input type="password" class="form-control proxy_auth_input" id="proxy_password" disabled="disabled" value="' + proxy.password + '"/>' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">Port:</span>' +
+        '<input type="text" onchange="firewallProxyInputChange(\'proxy-port\')" size="5" class="form-control proxy" onkeypress="return portKeyPress(\'proxy-port\', event)" id="proxy-port" disabled="disabled" value="' + proxy.port + '"/>' +
+        '</div>' +
+        '</div>' +
+
+        '<div class="asat-group disabled proxy-auth" onclick="enableParam(\'proxy-auth\', event)">' +
+        '<span class="fa-stack fa-lg">' +
+        '<i class="fa fa-square-o fa-stack-2x"></i>' +
+        '<i class="fa fa-share-alt fa-stack-1x"></i>' +
+        '</span>' +
+        '<i class="fa fa-plus"></i>' +
+        '<span class="fa-stack fa-lg">' +
+        '<i class="fa fa-square-o fa-stack-2x"></i>' +
+        '<i class="fa fa-lock fa-stack-1x"></i>' +
+        '</span>' +
+        '<span class="proxy-auth disabled asat-group-addon" >Proxy Authentication</span>' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">Username:</span>' +
+        '<input type="text" class="form-control proxy-auth" id="proxy-user" disabled="disabled" value="' + proxy.user + '"/>' +
+        '</div>' +
+        '<div class="input-group">' +
+        '<span class="input-group-addon">Password:</span>' +
+        '<input type="password" class="form-control proxy-auth" id="proxy-password" disabled="disabled" value="' + proxy.password + '"/>' +
+        '</div>' +
+        '</div>' +
+
         '</div>';
-    document.getElementById("firewall-test").innerHTML = htmlString;
+
     document.getElementById("firewall-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')">Cancel</button>' +
         '<button id="button-next" class="next btn btn-default" onclick="saveProxy(\'' + type + '\')">Save</button>';
 
-    document.getElementById("proxy_conf").checked = proxy.configured;
-    document.getElementById("proxy_auth").checked = proxy.auth;
-    enableProxyConf(proxy.configured);
+    resumeProxy(proxy.configured);
 }
 
 
-function proxyPortChange() {
-    if (document.getElementById('proxy_port')) {
-        var port = document.getElementById('proxy_port').value;
-        if (port < 0 || port > 65535) {
-            document.getElementById('formGroupProxyPort').className = "form-group has-warning";
-            $('#button-next').prop("disabled", true);
-        } else {
-            proxy.port = port;
-            document.getElementById('formGroupProxyPort').className = "form-group";
-            $('#formGroupProxyPort').removeClass("has-warning");
-            $('#button-next').prop("disabled", false);
-            return true;
-        }
-
-    }
-}
-function proxyPortKeyPress(event) {
-    if (event.charCode >= 48 && event.charCode <= 57) {
-        if (event.target.valueAsNumber < 0) {
-            document.getElementById('proxy_port').value = 0;
-            return false;
-        } else return true;
-    } else return false;
-}
-
-function enableProxyConf(proxy_conf_enable) {
-    $(".proxy_conf_input").each(function () {
-        $(this).prop("disabled", !proxy_conf_enable);
-    });
-
-    $(".proxy_conf_label").each(function () {
-        if (proxy_conf_enable) {
-            $(this).removeClass("disabled");
-        } else {
-            $(this).addClass("disabled");
-        }
-    });
-
-
-    if (proxy_conf_enable) {
-        enableProxyAuth(document.getElementById("proxy_auth").checked);
-    } else {
-        asatConsole.error(document.getElementById("proxy_auth").checked);
-        enableProxyAuth(false);
-    }
-}
-
-function enableProxyAuth(proxy_auth_enable) {
-    $(".proxy_auth_input").each(function () {
-        $(this).prop("disabled", !proxy_auth_enable);
-    });
-    $(".proxy_auth_label").each(function () {
-        if (proxy_auth_enable) {
-            $(this).removeClass("disabled");
-        } else {
-            $(this).addClass("disabled");
-        }
-    });
-
-}
 
 function saveProxy(type) {
-    if (document.getElementById("proxy_conf").checked) {
-        proxy.configured = true;
-        proxy.host = document.getElementById("proxy_host").value;
-        proxy.port = document.getElementById("proxy_port").value;
-        if (document.getElementById("proxy_auth").checked) {
-            proxy.auth = true;
-            proxy.user = document.getElementById("proxy_user").value;
-            proxy.password = document.getElementById("proxy_password").value;
-        } else {
-            proxy.auth = false;
-        }
-    } else {
-        proxy.configured = false;
-    }
+    proxy.configured = $("div.proxy").hasClass("enabled");
+    proxy.host = $("#proxy-host").val();
+    proxy.port = $("#proxy-port").val();
+    proxy.auth = $("div.proxy-auth").hasClass("enabled");
+    proxy.user = $("#proxy-user").val();
+    proxy.password= $("#proxy-password").val();
     displayFirewallDestinations(type);
 }
 
+function firewallProxyInputChange(param){
+    var isValid = true;
+    var elem = null;
+    switch (param){
+        case "proxy-host":
+            elem = $("#proxy-host");
+            isValid = validateFQDN(elem.val());
+            break;
+        case "proxy-port":
+            elem = $("#proxy-port");
+            if (0 < elem.val() && elem.val() <= 65535) isValid = true;
+            else isValid = false;
+            break;
+    }
+    if (isValid) {
+        elem.removeClass("isNotValid").addClass("isValid");
+        var allValid = true;
+        $('input').each(function(){
+            if ($(this).prop("disabled") == false) {
+                if ($(this).hasClass('isNotValid')) allValid = false;
+            }
+        });
+        if (allValid) $("#button-next").prop('disabled', false);
+    } else {
+        elem.addClass("isNotValid").removeClass("isValid");
+        $("#button-next").prop('disabled', true);
+    }
+}
+
+
+
+function enableParam(formGroup, event) {
+    switch (formGroup) {
+        case 'proxy':
+            formGroupState('proxy', event);
+            break;
+        case 'proxy-auth':
+            if ($("div.proxy-auth").hasClass("disabled")) {
+                if ($("div.proxy").hasClass("disabled")) {
+                    formGroupState('proxy', event);
+                }
+            }
+            formGroupState('proxy-auth', event);
+            break;
+    }
+}
+
+function resumeProxy() {
+    resumeFormGroupState('proxy', proxy.configured);
+    resumeFormGroupState('proxy-auth', proxy.auth);
+}
 /* ===================================================
  ====================== HM6 PARAMs ===================
  =================================================== */
@@ -488,7 +489,9 @@ function displayHm6Option() {
         hm6DcDisplay() +
         "</td>" +
         "<td>" +
-        "<input type='number' size='4' id='hm6_cluster' onkeypress='return event.charCode >= 48 && event.charCode <= 57' oninput='hm6ClusterChange()' value='" + hm6.cluster + "'/>" +
+        '<div class="input-group">' +
+        "<input type='number' class='form-control' style='padding: 0; height: 100%' size='4' id='hm6_cluster' onkeypress='return event.charCode >= 48 && event.charCode <= 57' oninput='hm6ClusterChange()' value='" + hm6.cluster + "'/>" +
+        "</dov>" +
         "</td>" +
         "</tr>";
 }

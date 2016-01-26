@@ -8,6 +8,7 @@
     <script type="text/javascript" src='./js/jquery.min.js'></script>
     <script type="text/javascript" src='./js/jquery.qtip.min.js'></script>
     <script type="text/javascript" src='./js/bootstrap.min.js'></script>
+    <script type="text/javascript" src='./js/asat.ui.js'></script>
     <link rel="stylesheet" href="./css/asat.css"/>
     <link rel="stylesheet" href="./css/jquery.qtip.min.css"/>
 </head>
@@ -190,16 +191,16 @@
             </tr>
             <tr class="breadcrumb-row deployment">
                 <td>
-                    <i class="fa fa-circle fa-lg firewall-button" id="deployment-find"></i>
+                    <i class="fa fa-circle fa-lg deployment-button" id="deployment-find"></i>
                 </td>
                 <td>
-                    <i class="fa fa-circle-o fa-lg firewall-button" id="deployment-common"></i>
+                    <i class="fa fa-circle-o fa-lg deployment-button" id="deployment-common"></i>
                 </td>
                 <td>
-                    <i class="fa fa-circle-o fa-lg firewall-button" id="deployment-network"></i>
+                    <i class="fa fa-circle-o fa-lg deployment-button" id="deployment-network"></i>
                 </td>
                 <td>
-                    <i class="fa fa-circle-o fa-lg firewall-button" id="deployment-deploy"></i>
+                    <i class="fa fa-circle-o fa-lg deployment-button" id="deployment-deploy"></i>
                 </td>
             </tr>
             </tbody>
@@ -265,7 +266,7 @@
                 initFirewallTest();
                 break;
             case "deployment":
-                displayDeployment();
+                initDeployment();
                 break;
             case "license":
                 displayLicense();

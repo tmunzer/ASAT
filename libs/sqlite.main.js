@@ -8,3 +8,4 @@ module.exports.HiveManager = require('./sqlite.hivemanagerTest');
 module.exports.Hm6DC = require("./sqlite.hm6_dc");
 module.exports.Hm6Type = require("./sqlite.hm6_type");
 module.exports.HmNgDC = require("./sqlite.hmng_dc");
+module.exports.CountryCode = require("./sqlite.country.code");

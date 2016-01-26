@@ -8,40 +8,7 @@ var Sqlite = function(){
     this.db = db;
     this.db.serialize(function() {
         if(!exists) {
-            db.run('CREATE TABLE "DEVICE_TEST" (' +
-                '"id" INTEGER PRIMARY KEY, ' +
-                '"HOST" VARCHAR(90) DEFAULT (null) ,' +
-                '"PORT" INT,' +
-                '"PROTO_ID" INT,' +
-                '"SERVICE_ID" INT,' +
-                '"COMMENT" TEXT)');
-            db.run('CREATE TABLE "HIVEMANAGER_TEST" (' +
-                '"id" INTEGER PRIMARY KEY, ' +
-                '"HOST" VARCHAR(90) DEFAULT (null) ,' +
-                '"PORT" INT,' +
-                '"PROTO_ID" INT,' +
-                '"HM_VERSION_ID" INT,' +
-                '"COMMENT" TEXT)');
-            db.run('CREATE TABLE "PROTO" (' +
-                '"id" INTEGER PRIMARY KEY, ' +
-                '"PROTO_NAME" VARCHAR(3))');
-            db.run('CREATE TABLE "SERVICE" (' +
-                '"id" INTEGER PRIMARY KEY, ' +
-                '"SERVICE_NAME" VARCHAR(60))');
-            db.run('CREATE TABLE "HM_VERSION" (' +
-                '"id" INTEGER PRIMARY KEY, ' +
-                '"VERSION" VARCHAR(60))');
-            db.run('CREATE TABLE "HM6_DC" (' +
-                '"id" INTEGER PRIMARY KEY, ' +
-                '"AREA" VARCHAR(12),' +
-                '"HOST_VALUE VARCHAR(12))');
-            db.run("INSERT INTO SERVICE VALUES (1, 'HiveManager 6')");
-            db.run("INSERT INTO SERVICE VALUES (2, 'HiveManager NG')");
-            db.run("INSERT INTO SERVICE VALUES (3, 'IDManager')");
-            db.run("INSERT INTO SERVICE VALUES (4, 'Redirector')");
-            db.run("INSERT INTO PROTO VALUES (1, 'TCP')");
-            db.run("INSERT INTO PROTO VALUES (2, 'UDP')");
-            db.run("INSERT INTO DEVICE_TEST VALUES (1, 'redirector.aerohive.com', '12222', '2', '4', '')");
+            console.log('DB Error!!!');
         }
     });
 };
