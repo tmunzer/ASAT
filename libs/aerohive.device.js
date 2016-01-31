@@ -18,7 +18,8 @@ module.exports = function(ipAddress, valid, macAddress, serialNumber, deviceType
             nativeVlan: "1",
             mgmtVlan: "1"
         };
-    }
+    };
+    this.selected = false;
 };
 
 function validateSN(serial) {

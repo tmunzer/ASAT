@@ -21,6 +21,7 @@ var network = addresses[0];
 
 
 var Discover = require("./libs/deployment.discover");
+var Deploy = require("./libs/deployment.deploy");
 var Device = require('./libs/aerohive.device');
 
 
@@ -121,10 +122,7 @@ messenger.on("deployment discover start", function (process, devCount) {
     $('.progress-bar').css('width', '100%').text("Stopping test...").addClass("progress-bar-danger");
     $("#find-stop").prop("disabled", true);
 }).on('deployment discover end', function (process) {
-    console.log("process: " + process + "/" + discoverProcess);
     if (discoverProcess == process) {
-        console.log("end");
-        console.log(deviceNumber + "/" + deviceCount);
         $('.progress-bar').css('width', '100%').attr('aria-valuenow', deviceCount + "/" + deviceCount);
         $("#find-start").prop("disabled", false);
         $("#find-stop").prop("disabled", true);
@@ -176,7 +174,7 @@ function displayDeployment() {
         "</tbody>" +
         "</table>";
     document.getElementById("deployment-action").innerHTML =
-        '<button id="button-next" class="next btn btn-default" disabled="disabled"  onclick="displayCommonParam()" >Next</button>';
+        '<button id="depl-button-next" class="next btn btn-default" disabled="disabled"  onclick="displayCommonParam()" >Next</button>';
     displayDevices();
 }
 
@@ -216,7 +214,7 @@ function startDiscovery() {
     discoverProcess++;
     var cidr = $('#network').val();
     credentials.password = $('#password').val();
-    Discover.discover(discoverProcess, cidr, credentials, 5, asatConsole, messenger);
+    Discover.discover(discoverProcess, cidr, credentials, 10, asatConsole, messenger);
 }
 function stopDiscovery() {
     messenger.emit("deployment discover stop");
@@ -228,7 +226,7 @@ function clearDiscovery() {
 
 function selectAllDiscovery() {
     for (var i in deviceList) {
-        deviceList[i].selected = true;
+        if (deviceList[i].isValid) deviceList[i].selected = true;
     }
     nextButtonState(true);
     displayDevices();
@@ -241,11 +239,11 @@ function unselectAllDiscovery() {
     displayDevices();
 }
 function nextButtonState(newState) {
-    if (newState == true) $("#button-next").prop('disabled', false);
-    else if (newState == false) $("#button-next").prop('disabled', true);
+    if (newState == true) $("#depl-button-next").prop('disabled', false);
+    else if (newState == false) $("#depl-button-next").prop('disabled', true);
     else {
-        if ($('tr.selected').length == 0) $("#button-next").prop('disabled', true);
-        else $("#button-next").prop('disabled', false);
+        if ($('tr.selected').length == 0) $("#depl-button-next").prop('disabled', true);
+        else $("#depl-button-next").prop('disabled', false);
     }
 }
 function sortIp(deviceA, deviceB) {
@@ -441,11 +439,11 @@ function displayCommonParam() {
         '</span>' +
         '<div class="input-group deployment first">' +
         '<span class="input-group-addon">Username:</span>' +
-        '<input type="text" onchange="inputChange(\'proxy-user\')" class="form-control switch-proxy-auth" id="switch-proxy-user" disabled="disabled" value="' + commonParam.capwap.http.proxy.auth.user + '"/>' +
+        '<input type="text" onchange="inputChange(\'proxy-user\')" class="form-control switch-proxy-auth" id="proxy-user" disabled="disabled" value="' + commonParam.capwap.http.proxy.auth.user + '"/>' +
         '</div>' +
         '<div class="input-group deployment first">' +
         '<span class="input-group-addon">Password:</span>' +
-        '<input type="password" onchange="inputChange(\'proxy-password\')" class="form-control switch-proxy-auth" id="switch-proxy-password" disabled="disabled" value="' + commonParam.capwap.http.proxy.auth.password + '"/>' +
+        '<input type="password" onchange="inputChange(\'proxy-password\')" class="form-control switch-proxy-auth" id="proxy-password" disabled="disabled" value="' + commonParam.capwap.http.proxy.auth.password + '"/>' +
         '</div>' +
         '</div>' +
 
@@ -467,50 +465,69 @@ function displayCommonParam() {
     resumeParam();
     document.getElementById("deployment-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayDeployment()">Back</button>' +
-        '<button id="button-next" class="next btn btn-default" onclick="displayNetworkParam()" >Next</button>';
+        '<button id="depl-button-next" class="next btn btn-default" onclick="displayNetworkParam()" >Next</button>';
 }
 
+/* this function is called when the user change the value of a dropdown list
+ @params:
+ dropdown: id (without "dropdown-" of the dropdown
+ value: value selected by the user
+ */
 function dropdownChange(dropdown, value) {
+    // assign the new value to the commonParam
     commonParam[dropdown].value = value;
     switch (dropdown) {
-        case 'countru':
+        case 'country':
             $("#dropdown-" + dropdown).html(countryList[value]);
             break;
         case "region":
             $("#dropdown-" + dropdown).html(value);
             if (value.toLowerCase() == "fcc") {
-                if ($("#country").hasClass("fa-check-square-o")) deplEnableParam('country');
+                // if FCC, disable the country selector and add the 'disable' class to the country selector
+                if ($("#country").hasClass("fa-check-square-o")) deplEnableParam('country', true);
                 $("#country").addClass('disabled');
             } else {
+                // if not FCC, remove the "disable" class to the country selector and enable the country selector
                 $("#country").removeClass('disabled');
-                if ($("#country").hasClass("fa-square-o")) deplEnableParam("country");
+                if ($("#country").hasClass("fa-square-o")) deplEnableParam("country", true);
             }
             break;
     }
     return false;
 }
 
-
+/* function called when the value of an input changes
+  @params:
+  param: the type of input
+ */
 function inputChange(param) {
     var isValid = true;
     var elem = null;
     switch (param) {
         case "dns":
+            // if "dns", check the validity of the value
+            // if the value is valide, assign it to the commonParam
             elem = $('#dns-host');
             isValid = valideateIP(elem.val());
             if (isValid) commonParam.dns.value = elem.val();
             break;
         case "ntp":
+            // if "ntp", check the validity of the value
+            // if the value is valide, assign it to the commonParam
             elem = $("#ntp-host");
             isValid = validateFQDN(elem.val());
             if (isValid) commonParam.ntp.value = elem.val();
             break;
         case "capwap-server":
+            // if "capwap-server", check the validity of the value
+            // if the value is valide, assign it to the commonParam
             elem = $("#capwap-server");
             isValid = validateFQDN(elem.val());
             if (isValid) commonParam.capwap.server = elem.val();
             break;
         case "capwap-port":
+            // if "capwap-port", check the validity of the value
+            // if the value is valide, assign it to the commonParam
             elem = $("#capwap-port");
             if (0 < elem.val() && elem.val() <= 65535) {
                 isValid = true;
@@ -518,11 +535,15 @@ function inputChange(param) {
             } else isValid = false;
             break;
         case "proxy-host":
+            // if "proxy-host", check the validity of the value
+            // if the value is valide, assign it to the commonParam
             elem = $("#proxy-host");
             isValid = validateFQDN(elem.val());
             if (isValid) commonParam.capwap.http.proxy.host = elem.val();
             break;
         case "proxy-port":
+            // if "port-port", check the validity of the value
+            // if the value is valide, assign it to the commonParam
             elem = $("#proxy-port");
             if (0 < elem.val() && elem.val() <= 65535) {
                 isValid = true;
@@ -530,41 +551,51 @@ function inputChange(param) {
             } else isValid = false;
             break;
         case "proxy-user":
+            // if "proxy-user", assign the value to the commonParam
             elem = $("#proxy-user");
             commonParam.capwap.http.proxy.auth.user = elem.val();
             break;
         case "proxy-password":
+            // if "proxy-password", assign the value to the commonParam
             elem = $("#proxy-password");
             commonParam.capwap.http.proxy.auth.password = elem.val();
             break;
-        case "new-ip":
-            elem = $("#new-ip");
-            isValid = valideateIP(elem.val());
-
     }
+    // if the value is valid
     if (isValid) {
+        // change the class of the input to "isValid"
         elem.removeClass("isNotValid").addClass("isValid");
         var allValid = true;
+        // check if all the other inputs are valid
         $('input').each(function () {
             if ($(this).prop("disabled") == false) {
                 if ($(this).hasClass('isNotValid')) allValid = false;
             }
         });
-        if (allValid) $("#button-next").prop('disabled', false);
+        // if this input and all the others are valid, enable the "next" button
+        if (allValid) $("#depl-button-next").prop('disabled', false);
     } else {
+        // if this input is not valid, disable the "next" button
         elem.addClass("isNotValid").removeClass("isValid");
-        $("#button-next").prop('disabled', true);
+        $("#depl-button-next").prop('disabled', true);
     }
 }
 
+/* this function is called when a "ON/OFF" switch is changed
+ @params:
+ formGroup: the id of the switch (without "switch-")
+  */
 function deplSwictchChange(formGroup) {
     var switchValue = $("#switch-" + formGroup).prop('checked');
+    // assign the new value to the commonParam
     switch (formGroup) {
         case "capwap":
             commonParam.capwap.configured = switchValue;
             break;
         case "http":
             commonParam.capwap.http.configured = switchValue;
+            if (switchValue) $("#capwap-port").val("80");
+            else $("#capwap-port").val("12222");
             break;
         case "proxy":
             commonParam.capwap.http.proxy.configured = switchValue;
@@ -573,11 +604,14 @@ function deplSwictchChange(formGroup) {
             commonParam.capwap.http.proxy.auth.configured = switchValue;
             break;
     }
+    // if the switch is moved to "On", enable the corresponding elements
     if (switchValue) {
         $(".switch-" + formGroup).prop('disabled', false);
     }
+    // else, disable the corresponding elements
     else {
         $(".switch-" + formGroup).prop('disabled', true);
+        // if the switch is moved to "Off", disable the next parameters
         switch (formGroup) {
             case 'capwap':
                 if ($("#http").hasClass("fa-check-square-o")) deplEnableParam("http");
@@ -592,9 +626,22 @@ function deplSwictchChange(formGroup) {
     }
 }
 
-function deplEnableParam(formGroup, forceSwitch) {
-    var elem;
+/* this function is called when a checkbox si changed, or to change the value (for example, when a "On/Off" switch is move)
+@params:
+formGroup: the id of element to change
+force = true to force the change
+ */
+function deplEnableParam(formGroup, force) {
+    var regionElem = $("#region");
+    var countryElem = $("#country");
+    var capwapElem = $("#capwap");
+    var httpElem = $("#http");
+    var proxyElem = $("#proxy");
+    var proxyAuthElem = $("#proxy-auth");
+
     switch (formGroup) {
+        // for the below elements, change the state (enable/disable) and the display
+        // then, assign the enable/disable state to commonParam
         case "dns":
         case "ntp":
         case "save":
@@ -603,84 +650,113 @@ function deplEnableParam(formGroup, forceSwitch) {
             commonParam[formGroup].enable = $("#" + formGroup).hasClass("fa-check-square-o");
             break;
         case "region":
-            formGroupState2("region");
-            elem = $("#region");
-            var countryElem = $("#country");
-            commonParam.region.enable = elem.hasClass("fa-check-square-o");
-            if (elem.hasClass("fa-check-square-o")) {
-                if ($("#dropdown-region").html().toLowerCase() == "fcc"){
-                    if (countryElem.hasClass("fa-check-square-o")) deplEnableParam("country");
+            // if "region" is not locked (if "country" is enabled, force the region to "World")
+            if (!regionElem.hasClass("disabled")) {
+                formGroupState2("region");
+
+                if (regionElem.hasClass("fa-check-square-o")) {
+                    // if "region" is checked
+                    // disable "country" (will be enabled/disabled depending on the region mode)
                     countryElem.addClass("disabled");
-                } else {
-                    countryElem.removeClass("disabled");
-                    if (countryElem.hasClass("fa--square-o")) deplEnableParam("country");
-                }
-            } else $("#country").removeClass("disabled");
+                    // if configured to "FCC", uncheck "country"  (can't be configured when FCC is selected)
+                    if ($("#dropdown-region").html().toLowerCase() == "fcc") {
+                        if (countryElem.hasClass("fa-check-square-o")) deplEnableParam("country", true);
+                    } else {
+                        // if "region" is checked and configured to something else than "FCC"
+                        // enable "country" and check is
+                        if (countryElem.hasClass("fa-square-o")) deplEnableParam("country", true);
+                    }
+                // when forced, enable the region
+                } else if (force)formGroupState2("region");
+                // else disable "region"
+                else countryElem.removeClass("disabled");
+            }
+            // set the new value to commonParam
+            commonParam.region.enable = regionElem.hasClass("fa-check-square-o");
             break;
         case "country":
-            elem = $("#country");
-            if (!elem.hasClass("disabled")){
+            // if "country" is not locked (if "region" is enabled)
+            if (!countryElem.hasClass("disabled")) {
                 formGroupState2("country");
-                commonParam.country.enable = elem.hasClass("fa-check-square-o");
-                if (elem.hasClass("fa-check-square-o")) {
-                    if ($("#region").hasClass("fa-square-o")) deplEnableParam("region");
+                // if "country" is enabled, and is now checked
+                // check "region", lock it, and configure it as "World"
+                if (countryElem.hasClass("fa-check-square-o")) {
+                    regionElem.addClass("fa-check-square-o").removeClass("fa-square-o");
+                    regionElem.addClass("disabled");
+                    $("#dropdown-region").html("World");
+                // else (if "country" is not checked)
+                // unlock "region"
+                } else {
+                    regionElem.removeClass("fa-check-square-o").addClass("fa-square-o");
+                    regionElem.removeClass("disabled");
                 }
-            }
-
+            // if forced, change the state of "country"
+            } else if (force) formGroupState2("country");
+            // set the new value to commonParam
+            commonParam.country.enable = countryElem.hasClass("fa-check-square-o");
             break;
         case "capwap":
-            elem = $("#capwap");
-            if (forceSwitch) {
+            if (force) {
+                // if forced, enable "capwap" and turn the switch "On"
                 $("#switch-capwap").prop("checked", true);
-                if (elem.hasClass("fa-square-o")) {
-                    formGroupState2('capwap');
-                }
-
+                if (capwapElem.hasClass("fa-square-o")) formGroupState2('capwap');
+            // else change the "capwap" state
             } else {
                 formGroupState2('capwap');
-                if (elem.hasClass("fa-square-o")) {
-                    if ($("#http").hasClass("fa-check-square-o")) deplEnableParam("http");
+                // if capwap is disabled, disable also http (if enabled)
+                if (capwapElem.hasClass("fa-square-o")) {
+                    if (httpElem.hasClass("fa-check-square-o")) deplEnableParam("http");
                 }
             }
             deplSwictchChange('capwap');
-            commonParam.capwap.enable = elem.hasClass("fa-check-square-o");
+            // set the new value to commonParam
+            commonParam.capwap.enable = capwapElem.hasClass("fa-check-square-o");
+            if (capwapElem.hasClass('fa-square-o')) $(".switch-capwap").prop('disabled', true);
             break;
         case 'http':
-            elem = $("#http");
-            if (forceSwitch) {
+            if (force) {
+                // if forced, enable "capwap" and turn the switch "On"
                 $("#switch-http").prop("checked", true);
-                if (elem.hasClass("fa-square-o")) {
-                    formGroupState2('http');
-                }
+                if (httpElem.hasClass("fa-square-o")) formGroupState2('http');
             } else {
+                // else change the "http" state
                 formGroupState2('http');
-                if ($("#proxy").hasClass("fa-check-square-o")) deplEnableParam('proxy');
+                // if http is disabled, disable the fields, use the default capwap port, and disable proxy (if enabled)
+                if (httpElem.hasClass("fa-square-o")){
+                    $(".switch-http").prop('disabled', true);
+                    $("#capwap-port").val("12222");
+                    if (proxyElem.hasClass("fa-check-square-o")) deplEnableParam('proxy');
+                }
             }
-            if (elem.hasClass("fa-check-square-o")) deplEnableParam('capwap', true);
             deplSwictchChange('http');
-            commonParam.capwap.http.enable = elem.hasClass("fa-check-square-o");
+            commonParam.capwap.http.enable = httpElem.hasClass("fa-check-square-o");
+            if (httpElem.hasClass("fa-check-square-o")) deplEnableParam('capwap', true);
             break;
         case 'proxy':
-            elem = $("#proxy");
-            if (forceSwitch) {
+            // if forced, enable "proxy" and turn the switch "On"
+            if (force) {
                 $("#switch-proxy").prop("checked", true);
-                if (elem.hasClass("fa-square-o")) {
-                    formGroupState2('proxy');
-                }
+                if (proxyElem.hasClass("fa-square-o")) formGroupState2('proxy');
             } else {
+                // else change the "proxy" state
                 formGroupState2('proxy');
-                if ($("#proxy-auth").hasClass("fa-check-square-o")) deplEnableParam('proxy-auth');
+                //if disabled, disable the fields, and disable the proxy Auth if enabled
+                if (proxyElem.hasClass("fa-square-o")){
+                    $(".switch-proxy").prop('disabled', true);
+                    if (proxyAuthElem.hasClass("fa-check-square-o")) deplEnableParam('proxy-auth');
+                }
             }
-            if (elem.hasClass("fa-check-square-o")) deplEnableParam('http', true);
             deplSwictchChange('proxy');
-            commonParam.capwap.http.proxy.enable = elem.hasClass("fa-check-square-o");
+            commonParam.capwap.http.proxy.enable = proxyElem.hasClass("fa-check-square-o");
+            if (proxyElem.hasClass("fa-check-square-o")) deplEnableParam('http', true);
             break;
         case 'proxy-auth':
+            // change the "proxy-auth" state
             formGroupState2('proxy-auth');
-            elem = $("#proxy-auth");
-            if (elem.hasClass("fa-check-square-o")) deplEnableParam('proxy', true);
             deplSwictchChange('proxy-auth');
-            commonParam.capwap.http.proxy.auth.enable = elem.hasClass("fa-check-square-o");
+            commonParam.capwap.http.proxy.auth.enable = proxyAuthElem.hasClass("fa-check-square-o");
+            if (proxyAuthElem.hasClass("fa-square-o")) $(".switch-proxy-auth").prop('disabled', true);
+            else deplEnableParam('proxy', true);
             break;
     }
 }
@@ -704,11 +780,9 @@ function resumeParam() {
  =================================================== */
 
 function displayNetworkParam() {
-    console.log(commonParam);
     // change the breadcrumb status
     $(".deployment-button").removeClass("fa-circle").addClass("fa-circle-o");
     $("#deployment-network").removeClass("fa-circle-o").addClass("fa-circle");
-    console.log(deviceList);
     var htmlString =
         "<button id='find-import' onclick='startDiscovery()' class='btn btn-default' disabled='disabled'>Import</button>" +
         "<button id='find-export' onclick='stopDiscovery()' class='btn btn-default' disabled='disabled'>Export</button>" +
@@ -733,10 +807,10 @@ function displayNetworkParam() {
                 '<td>' + deviceList[device].serialNumber + '</td>' +
                 '<td>' + deviceList[device].macAddress + '</td>' +
                 '<td>' + deviceList[device].ipAddress + '</td>' +
-                '<td><input class="asat-table-input" id="newNet-' + device + '" type="text" ' +
+                '<td><input class="asat-table-input" id="newNet-' + device + '" type="text" placeholder="DHCP client"' +
                 'onkeypress="return networkKeyPress(event)" onchange="deplNewNet(\'' + device + '\')" size="18" ' +
                 'value="' + deviceList[device].configuration.ipAddress + '"></td>' +
-                '<td><input class="asat-table-input" id="newGw-' + device + '" type="text" ' +
+                '<td><input class="asat-table-input" id="newGw-' + device + '" type="text" placeholder="DHCP client"' +
                 'onkeypress="return ipKeyPress(event)" onchange="deplNewGw(\'' + device + '\')" type="text" size="15" ' +
                 'value="' + deviceList[device].configuration.gateway + '"></td>' +
                 '<td><input class="asat-table-input" id="newNatVlan-' + device + '" ' +
@@ -752,8 +826,8 @@ function displayNetworkParam() {
         '</table>';
     document.getElementById("deployment-window").innerHTML = htmlString;
     document.getElementById("deployment-action").innerHTML =
-        '<button id="button-back" class="back btn btn-default" onclick="displayDeployment()">Back</button>' +
-        '<button id="button-next" class="next btn btn-default" onclick="displaySendConfiguration()" >Next</button>';
+        '<button id="button-back" class="back btn btn-default" onclick="displayCommonParam()">Back</button>' +
+        '<button id="depl-button-next" class="next btn btn-default" onclick="displaySendConfiguration()" >Next</button>';
 
     for (var device in deviceList) {
         if (deviceList[device].selected) {
@@ -777,11 +851,11 @@ function deplNewVlan(vlanType, devId) {
         var api = $('#qtip-' + vlanType + devId).qtip('api');
         if (api) api.destroy(true);
         if ($(".isNotValid").length > 0) {
-            $("#button-next").prop('disabled', true);
-        } else $("#button-next").prop('disabled', false);
+            $("#depl-button-next").prop('disabled', true);
+        } else $("#depl-button-next").prop('disabled', false);
     } else {
         elem.addClass("isNotValid").removeClass("isValid");
-        $("#button-next").prop('disabled', true);
+        $("#depl-button-next").prop('disabled', true);
         qtipDeplError(elem, vlanType + devId, "VLAN value should be between 1 and 4094.");
     }
 }
@@ -817,7 +891,7 @@ function deplNewNet(devId) {
     } else {
         elem.addClass("isNotValid").removeClass("isValid");
         qtipDeplError(elem, 'newNet-' + devId, "IP configuration is not valid. Should be \"IP Address/mask\".");
-        $("#button-next").prop('disabled', true);
+        $("#depl-button-next").prop('disabled', true);
     }
 }
 
@@ -836,7 +910,7 @@ function deplNewGw(devId) {
     } else {
         elem.addClass("isNotValid").removeClass("isValid");
         qtipDeplError(elem, 'newGw-' + devId, "Invalid Gateway IP Address.");
-        $("#button-next").prop('disabled', true);
+        $("#depl-button-next").prop('disabled', true);
     }
 }
 
@@ -877,8 +951,8 @@ function deplGwInNet(devId) {
         if (api) api.destroy(true);
     }
     if ($(".isNotValid").length > 0) {
-        $("#button-next").prop('disabled', true);
-    } else $("#button-next").prop('disabled', false);
+        $("#depl-button-next").prop('disabled', true);
+    } else $("#depl-button-next").prop('disabled', false);
 
 }
 
@@ -933,7 +1007,6 @@ function displaySendConfiguration() {
     // change the breadcrumb status
     $(".deployment-button").removeClass("fa-circle").addClass("fa-circle-o");
     $("#deployment-deploy").removeClass("fa-circle-o").addClass("fa-circle");
-    console.log(deviceList);
     var htmlString =
         "<hr>" +
         '<div style="width:100%;">' +
@@ -977,7 +1050,7 @@ function displaySendConfiguration() {
             else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
             if (commonParam.ntp.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
             else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
-            if (commonParam.capwap.enable) htmlString += '<td> class="icon"<i class="fa fa-check-circle" style="color: green"></i></td>';
+            if (commonParam.capwap.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
             else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
             if (commonParam.capwap.http.proxy.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
             else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
@@ -994,7 +1067,7 @@ function displaySendConfiguration() {
             if (commonParam.reboot.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
             else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
             htmlString +=
-                '<td id="deploy-' + device + '" class="icon"></td>' +
+                '<td id="deploy-' + device + '" class="icon deploy-result"></td>' +
                 '</tr>';
         }
     }
@@ -1005,7 +1078,7 @@ function displaySendConfiguration() {
     document.getElementById("deployment-window").innerHTML = htmlString;
     document.getElementById("deployment-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayNetworkParam()">Back</button>' +
-        '<button id="button-next" class="next btn btn-default" onclick="displaySendConfiguration()" >Deploy</button>';
+        '<button id="depl-button-next" class="next btn btn-default" onclick="startConfiguration()" >Deploy</button>';
 
 }
 
@@ -1013,21 +1086,69 @@ function displaySendConfiguration() {
  ======================= FINAL =====================
  =================================================== */
 
-messenger.on("deployment deploy start ", function (process, devCount) {
-    deviceCount = devCount;
-    deviceNumber = 0;
+messenger.on("deployment deploy start", function (process, devCount) {
+    if (process == discoverProcess) {
+        deviceCount = devCount;
+        deviceNumber = 0;
+        $('.deploy-result').each(function () {
+            $(this).html('<i class="fa fa-circle-o-notch fa-spin"></i>');
+        })
+    }
+}).on("deployment deploy update", function (process, devNum, error, warning, success) {
+    if (process == discoverProcess) deplDisplayResult(devNum, error, warning, success);
 }).on('deployment deploy stop', function () {
     $('.progress-bar').css('width', '100%').text("Stopping test...").addClass("progress-bar-danger");
     $("#find-stop").prop("disabled", true);
-    //messenger.emit("end");
 }).on('deployment deploy end', function (process) {
-    console.log("process: " + process + "/" + discoverProcess);
     if (discoverProcess == process) {
-        console.log("end");
-        console.log(deviceNumber + "/" + deviceCount);
         $('.progress-bar').css('width', '100%').attr('aria-valuenow', deviceCount + "/" + deviceCount);
         $("#find-start").prop("disabled", false);
         $("#find-stop").prop("disabled", true);
         $("#find-clear").prop("disabled", false);
     }
 });
+
+function startConfiguration() {
+    discoverProcess++;
+    Deploy.start(discoverProcess, deviceList, commonParam, credentials, 5, asatConsole, messenger);
+}
+
+/* ===================================================
+ ====================== QTIP =========================
+ =================================================== */
+
+function deplDisplayResult(devId, error, warning, success) {
+    var qtipText = "";
+    var qtipTitle = "";
+    var qtipClass = "";
+    if (error) {
+        qtipTitle = "Error";
+        qtipText = error;
+        qtipClass = "error";
+        $("#deploy-" + devId).html("<i id='result-" + devId + "' class='fa fa-times-circle' style='color: red'></i>");
+    } else if (warning) {
+        qtipTitle = "Warning";
+        qtipText = warning;
+        qtipClass = "warning";
+        $("#deploy-" + devId).html("<i id='result-" + devId + "' class='fa fa-warning' style='color: orange'></i>");
+    } else {
+        qtipTitle = "Success";
+        qtipText = success;
+        qtipClass = "success";
+        $("#deploy-" + devId).html("<i id='result-" + devId + "' class='fa fa-check-circle' style='color: green'></i>");
+    }
+
+    $("#result-" + devId).qtip({
+        content: {
+            text: qtipText,
+            title: qtipTitle
+        },
+        position: {
+            my: "right center",
+            at: "left center"
+        },
+        style: {
+            classes: "qtip-shadow qtip-" + qtipClass
+        }
+    })
+}

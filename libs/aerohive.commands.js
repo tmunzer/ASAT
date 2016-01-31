@@ -21,101 +21,66 @@ module.exports.setDhcpClient = function (dhcp) {
 };
 
 module.exports.setIpAddress = function (ip, mask) {
-    return "interface mgt0 ip " + ip + " " + mask;
-};
-module.exports.setNoIpAddress = function () {
-    return "no interface mgt0 ip";
+    if (ip) return "interface mgt0 ip " + ip + " " + mask;
+    else return "no interface mgt0 ip";
+
 };
 module.exports.setMgmtVlan = function (mgmtVlan) {
-        return "interface mgt0 vlan " + mgmtVlan;
+    if (mgmtVlan) return "interface mgt0 vlan " + mgmtVlan;
+    else return "no interface mgt0 vlan";
 };
 module.exports.setNativeVlan = function (nativeVlan) {
-        return "interface mgt0 native-vlan " + nativeVlan;
+    if (nativeVlan) return "interface mgt0 native-vlan " + nativeVlan;
+    else return "no interface mgt0 native-vlan";
 };
 module.exports.setIpRoute = function (gw) {
-        return "ip route default gateway " + gw;
+    if (gw) return "ip route default gateway " + gw;
+    else return "no ip route default gateway";
 };
 module.exports.setCapwapClientServer = function (server) {
-    return "capwap client server name " + server;
+    if (server) return "capwap client server name " + server;
+    else return "no capwap client server name";
 };
 module.exports.setCapwapClientServerPort = function (port) {
-    return "capwap client server port " + port;
+    if (port) return "capwap client server port " + port;
+    else return "no capwap client server port";
 };
 module.exports.setCapwapClientTransport = function (http) {
-    if (http) {
-        return "capwap client transport HTTP\r\ncapwap client server port 80";
-    }
-    else {
-        return "no capwap client transport HTTP\r\nno capwap client server port";
-    }
+    if (http) return "capwap client transport HTTP";
+    else return "no capwap client transport HTTP";
 };
 
 module.exports.setCapwapClientProxy = function (server, port) {
-    if (!server) {
-        return "no capwap client HTTP proxy name";
-    } else {
-        return "capwap client HTTP proxy name " + server + " port " + port;
-    }
+    if (server) return "capwap client HTTP proxy name " + server + " port " + port;
+    else return "no capwap client HTTP proxy name";
 };
 module.exports.setCapwapClientProxyAuth = function (user, password) {
-    if (!user) {
-        return "no capwap client HTTP proxy user";
-    } else {
-        return "capwap client HTTP proxy user " + user + " password " + password;
-    }
-    return 0;
+    if (user) return "capwap client HTTP proxy user " + user + " password " + password;
+    else return "no capwap client HTTP proxy user";
 };
 
-module.exports.setRegionMode = function (region) {
-    return "boot-param region " + region;
-    return this.errorCode;
-};
-
-module.exports.setCountryCode = function (country) {
-    var countryCode = -1;
-    try {
-        countryCode = Integer.valueOf(country);
-    }
-    finally {
-        if ((countryCode < 10000) && (countryCode > 0)) {
-            this.errorCode = 0;
-            return "boot-param country-code " + countryCode;
-        }
-        else {
-            this.errorCode = 1;
-            return "Error: Bad country code";
-        }
-    }
-    return this.errorCode;
+module.exports.setCountryCode = function (countryCode) {
+        if ((countryCode < 10000) && (countryCode > 0)) return "boot-param country-code " + countryCode;
+        else return "";
 };
 
 module.exports.setRegion = function (region) {
-    if ((region.toLowerCase().matches("fcc")) || region.toLowerCase().matches("world")) {
-        this.errorCode = 0;
+    if ((region.toLowerCase() == "fcc") || region.toLowerCase() == "world") {
         return "boot-param region " + region;
     }
     else {
-        this.errorCode = 1;
-        return "Error: Bad region";
+        return "";
     }
-    return this.errorCode;
 };
 
-module.exports.setDns = function (ip) {
-    if (InetAddressValidator.getInstance().isValidInet4Address(ip)) {
-        this.errorCode = 0;
-        return "dns server-ip " + ip;
-    }
-    else {
-        this.errorCode = 1;
-        return "Error: Bad IP address DNS server";
-    }
-    return this.errorCode;
+module.exports.setDns = function (dns) {
+    if (dns) return "dns server-ip " + dns;
+    else return "no dns server-ip";
+
 };
-module.exports.setNtp = function (server) {
-    this.errorCode = 0;
-    return "ntp server " + server;
-    return this.errorCode;
+module.exports.setNtp = function (ntp) {
+    if (ntp) return "ntp server " + ntp;
+    else return "no ntp server";
 };
 
 module.exports.getHw = function () {
@@ -144,19 +109,15 @@ module.exports.setDhcpServerArpCheck = function (dhcpInterface, check) {
         arpCheck = "no ";
     }
     return arpCheck + "interface " + dhcpInterface + " dhcp-server arp-check";
-    return this;
 };
 module.exports.setDhcpServerGateway = function (dhcpInterface, gateway) {
     return "interface " + dhcpInterface + " dhcp-server options default-gateway " + gateway;
-    return this;
 };
 module.exports.setDhcpServerNetmask = function (dhcpInterface, netmask) {
     return "interface " + dhcpInterface + " dhcp-server options netmask " + netmask;
-    return this;
 };
 module.exports.setDhcpServerDns = function (dhcpInterface, dns) {
     return "interface " + dhcpInterface + " dhcp-server options dns1 " + dns;
-    return this;
 };
 module.exports.setDhcpServerEnable = function (dhcpInterface, dhcpEnable) {
     var enableCmd = "";
@@ -164,7 +125,6 @@ module.exports.setDhcpServerEnable = function (dhcpInterface, dhcpEnable) {
         enableCmd = "no ";
     }
     return enableCmd + "interface " + dhcpInterface + " dhcp-server enable";
-    return this;
 };
 
 

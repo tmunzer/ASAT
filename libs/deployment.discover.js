@@ -43,14 +43,12 @@ module.exports.discover = function(discoverProcess, cidr, credentials, threads, 
 
 function discoverDevice(discoverProcess, deviceIP, credentials){
     if (deviceIP){
-        //asatConsole.debug('Testing IP Address ' + deviceIP);
         SSH.connectDevice(deviceIP, credentials, ["sh hw"], asatConsole, function(err, warn, data){
             discoverMessenger.emit("deployment discover nextIP", discoverProcess);
-            if (err != false) discoverMessenger.emit("deployment discover ip error", discoverProcess, deviceCount);
-            else if (warn != false) {
+            if (warn != false) {
                 var device = new Device(deviceIP, false, null, null, null, warn);
                 discoverMessenger.emit("deployment discover ip done", discoverProcess, device);
-            }
+            } else if (err != false) discoverMessenger.emit("deployment discover ip error", discoverProcess, deviceCount);
             else getInfo(discoverProcess, deviceIP, data);
         });
     }

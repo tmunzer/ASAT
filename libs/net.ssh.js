@@ -3,7 +3,7 @@ var Client = require('ssh2').Client;
 module.exports.connectDevice = function (ip, credentials, commands, asatConsole, callback) {
     var conn = new Client();
     var error = false;
-    var warning = false;
+    var warning = "";
     var stdout = "";
     var i = 0;
 
@@ -21,6 +21,9 @@ module.exports.connectDevice = function (ip, credentials, commands, asatConsole,
             }).on('data', function (data) {
                 console.log('STDOUT: ' + data);
                 stdout += data;
+                if (data.toString().indexOf("^--") >= 0) {
+                    warning += "Error on command '" + commands[i-1] + "'<br>";
+                }
                 if (data.toString().indexOf("#") >= 0) {
                     if (i < commands.length) {
                         stream.write(commands[i] + "\n");
@@ -34,23 +37,24 @@ module.exports.connectDevice = function (ip, credentials, commands, asatConsole,
         });
     }).on("error", function (err) {
         if (err.level == "client-timeout") {
-            error = ip + ": timeout";
-            asatConsole.debug(error);
+            error = "Timeout";
+            asatConsole.debug(ip + ": " + error);
         }
         else if (err.level == "client-authentication") {
-            warning = ip + ": authentication failed";
-            asatConsole.error(warning);
+            error = err;
+            warning = "Authentication failed";
+            asatConsole.error(ip + ": " + warning);
         }
         else if (err.level == "client-socket"){
-            error = ip + ": connection refused";
-            asatConsole.error(error);
+            error = "Connection refused";
+            asatConsole.error(ip + ": " + error);
         } else {
-            error = ip + ": " + err.message;
-            asatConsole.error(error);
+            error = err.message;
+            asatConsole.error(ip + ": " + error);
         }
         callback(error, warning, stdout);
     }).on("end", function () {
-        if (error == false && warning == false) callback(error, warning, stdout);
+        if (error == false) callback(error, warning, stdout);
     }).connect({
         host: ip,
         port: 22,

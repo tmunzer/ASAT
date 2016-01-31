@@ -87,7 +87,7 @@ function displayFirewallServiceHTML(res, type) {
     // change the buttons status
     document.getElementById("firewall-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayFirewallTest()">Back</button>' +
-        '<button id="button-next" class="next btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')" disabled="disabled">Next</button>';
+        '<button id="fw-button-next" class="next btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')" disabled="disabled">Next</button>';
 }
 
 function displayFirewallService(type) {
@@ -157,7 +157,7 @@ function displayFirewallDestinationsHTML(type, optionString) {
     // change the buttons status
     document.getElementById("firewall-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')">Back</button>' +
-        '<button id="button-next" class="next btn btn-default" onclick="startFirewallTest(\'' + type + '\')">Run Test</button>';
+        '<button id="fw-button-next" class="next btn btn-default" onclick="startFirewallTest(\'' + type + '\')">Run Test</button>';
     hm6DcChange();
     hm6ClusterChange();
     hmNgDcChange();
@@ -228,7 +228,7 @@ function startFirewallTest(type) {
     // change the buttons status
     document.getElementById("firewall-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayFirewallService(\'' + type + '\')">Back</button>' +
-        '<button id="button-next" class="next btn btn-default" onclick="startFirewallTest()">Restart Test</button>';
+        '<button id="fw-button-next" class="next btn btn-default" onclick="startFirewallTest()">Restart Test</button>';
     for (var i in testList) {
         for (var j in testList[i]) {
             var test = testList[i][j];
@@ -328,7 +328,7 @@ function buttonFirewall(id, prefix, exclusif) {
         currentButton.removeClass("active");
         $("#" + id + "-check").removeClass("fa fa-check");
         if ($("a[id^='" + prefix + "'].active").length == 0) {
-            $("#button-next").prop("disabled", true);
+            $("#fw-button-next").prop("disabled", true);
         }
     }
     else {
@@ -337,7 +337,7 @@ function buttonFirewall(id, prefix, exclusif) {
         }
         currentButton.addClass("active");
         $("#" + id + "-check").addClass("fa fa-check");
-        $("#button-next").prop("disabled", false);
+        $("#fw-button-next").prop("disabled", false);
     }
 }
 
@@ -407,7 +407,7 @@ function proxyConfiguration(type) {
 
     document.getElementById("firewall-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayFirewallDestinations(\'' + type + '\')">Cancel</button>' +
-        '<button id="button-next" class="next btn btn-default" onclick="saveProxy(\'' + type + '\')">Save</button>';
+        '<button id="fw-button-next" class="next btn btn-default" onclick="saveProxy(\'' + type + '\')">Save</button>';
 
     resumeProxy(proxy.configured);
 }
@@ -447,10 +447,10 @@ function firewallProxyInputChange(param){
                 if ($(this).hasClass('isNotValid')) allValid = false;
             }
         });
-        if (allValid) $("#button-next").prop('disabled', false);
+        if (allValid) $("#fw-button-next").prop('disabled', false);
     } else {
         elem.addClass("isNotValid").removeClass("isValid");
-        $("#button-next").prop('disabled', true);
+        $("#fw-button-next").prop('disabled', true);
     }
 }
 
@@ -626,7 +626,6 @@ function hmNgDcChange(hmNgDc) {
         $("#hmNgDcArea").html(hmNgDcDisplay());
     }
     updateHmNg();
-
 }
 
 function updateHmNg() {

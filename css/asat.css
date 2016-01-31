@@ -297,6 +297,9 @@ i.fa.deployment {
     min-width: 200px;
     margin: 1em 0;
 }
+i.fa.deployment.disabled {
+    color: gray;
+}
 i.fa.enabled {
     color:#3694D1;
 }
@@ -355,7 +358,10 @@ i.fa.enabled>span {
 .asat-table-input:hover, .asat-table-input:focus {
     background-color: white;
 }
-.asat-table>tbody>td.icon {
+.asat-table>tbody>tr>td {
+    vertical-align: middle;
+}
+.asat-table>tbody>tr>td.icon {
     text-align: center;
 }
 /*============================================== /
@@ -563,6 +569,7 @@ footer.no-console a {
     height: 165px;
     background-color: rgba(255,255,255,0.95);
     overflow-y: auto;
+    z-index: 15;
 
 }
 #console.console {
