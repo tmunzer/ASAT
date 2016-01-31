@@ -89,8 +89,7 @@ var commonParam = {
 function initDeployment() {
     db.CountryCode.getArray(function (res) {
         countryList = res;
-//        displayDeployment();
-        displayCommonParam();
+        displayDeployment();
     })
 }
 
