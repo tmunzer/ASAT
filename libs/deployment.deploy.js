@@ -3,20 +3,16 @@ var SSH = require("./net.ssh");
 var Netmask = require("netmask").Netmask;
 var Device = require('./aerohive.device');
 var discoverMessenger;
-var deviceCount;
 var asatConsole;
 
-module.exports.discover = function(discoverProcess, cidr, credentials, threads, myConsole, messenger){
+module.exports.discover = function(discoverProcess, deviceList, credentials, threads, myConsole, messenger){
     var block = new Netmask(cidr);
     discoverMessenger = messenger;
-    deviceCount = block.size - 2;
     asatConsole = myConsole;
     var runningProcess = 0;
     var stop = false;
 
-    var deviceIp = block.first;
-    asatConsole.info("Disovering network " + cidr);
-    discoverMessenger.emit("deployment discover start", discoverProcess, deviceCount);
+    discoverMessenger.emit("deployment deploy start", discoverProcess, deviceList.length);
     for (var i = 0; i < threads; i ++){
         if (block.contains(deviceIp)) {
             runningProcess ++;
@@ -56,17 +52,9 @@ function discoverDevice(discoverProcess, deviceIP, credentials){
     }
 }
 
-function getInfo(discoverProcess, deviceIP, data){
-    var dataSplitted = data.split('\r\n');
-    var macAddress, serialNumber, productType;
-    for (var i in dataSplitted){
-        if (dataSplitted[i].indexOf('Ethernet MAC address:') >= 0) macAddress = dataSplitted[i].split('Ethernet MAC address:')[1].trim();
-        else if (dataSplitted[i].indexOf('Serial number:') >= 0) serialNumber = dataSplitted[i].split('Serial number:')[1].trim();
-        else if (dataSplitted[i].indexOf('Product name:') >= 0) productType = dataSplitted[i].split('Product name:')[1].trim();
-    }
-    var device = new Device(deviceIP, true, macAddress, serialNumber, productType, "");
-    asatConsole.info('New ' + productType + ' found at ' + deviceIP + "(mac address: " + macAddress + ', serial number: ' + serialNumber + ")");
-    discoverMessenger.emit("deployment discover ip done", discoverProcess, device);
+function generateCommands(discoverProcess, device){
+    var commands = "";
+
 }
 
 

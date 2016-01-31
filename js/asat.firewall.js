@@ -35,6 +35,8 @@ function initFirewallTest() {
     })
 }
 
+//const EventEmitter = require('events').EventEmitter;
+//var firewallMessenger = new EventEmitter();
 
 /* ===================================================
  ============= FW tests (HM or DEVICES) ============
@@ -117,10 +119,10 @@ function displayFirewallDestinationsHTML(type, optionString) {
     $(".firewall-button").removeClass("fa-circle").addClass("fa-circle-o");
     $("#firewall-test-run").removeClass("fa-circle-o").addClass("fa-circle");
     var htmlString =
-        "<h4>Parameters</h4>" +
+        "<div class='ui-sec-tle'><h3>Parameters</h3></div>" +
         displayProxyButton(type) +
         optionString +
-        "<hr>" +
+        "<div class='ui-sec-tle'><h3>Tests</h3></div>" +
         "<table class='table table-condensed' id='entry-list'>" +
         "<thead>" +
         "<tr>" +
@@ -164,14 +166,13 @@ function displayFirewallDestinationsOptions(type, options) {
     var htmlString = "";
     if (options.indexOf("hm6") >= 0 || options.indexOf("hmng") >= 0) {
         htmlString +=
-            "<hr>" +
             "<table class='table table-condensed'>" +
             "<thead>" +
             "<tr>" +
-            "<th></th>" +
-            "<th>Server Type</th>" +
-            "<th>Datacenter</th>" +
-            "<th>Cluster Number</th>" +
+            "<th style='width: 19%'></th>" +
+            "<th style='width: 27%'>Server Type</th>" +
+            "<th style='width: 27%'>Datacenter</th>" +
+            "<th style='width: 27%'>Cluster Number</th>" +
             "</tr>" +
             "</thead>" +
             "<tbody>";
@@ -364,39 +365,39 @@ function displayProxyButton(type, options) {
 function proxyConfiguration(type) {
     document.getElementById("firewall-test").innerHTML =
         '<div style="width: 70%; margin: auto">' +
+        "<div class='ui-sec-tle'><h3>Proxy Configuration</h3></div>" +
 
-        '<div class="asat-group disabled proxy" onclick="enableParam(\'proxy\', event)">' +
-        '<span class="fa-stack fa-lg">' +
-        '<i class="fa fa-square-o fa-stack-2x"></i>' +
-        '<i class="fa fa-share-alt fa-stack-1x"></i>' +
+        '<div class="proxy">' +
+        '<i class="fa fa-square-o fa-lg deployment" id="proxy" onclick="fwSwictchChange(\'proxy\')"> '+
+        '<span class="capwap disabled asat-group-addon">CAPWAP Proxy</span>' +
+        '</i>' +
+        '<span class="controls">' +
+        '<input name="ace-switch-proxy" class="ace-switch ace-switch-7" type="checkbox" disabled="disabled" checked="checked">' +
+        '<span class="lbl switch-label"></span>' +
         '</span>' +
-        '<span class="proxy disabled asat-group-addon" >CAPWAP Proxy</span>' +
-        '<div class="input-group">' +
+        '<div class="input-group deployment first">' +
         '<span class="input-group-addon">Host:</span>' +
         '<input type="text" onchange="firewallProxyInputChange(\'proxy-host\')" class="form-control proxy" id="proxy-host" disabled="disabled" value="' + proxy.host + '"/>' +
         '</div>' +
-        '<div class="input-group">' +
+        '<div class="input-group deployment first">' +
         '<span class="input-group-addon">Port:</span>' +
         '<input type="text" onchange="firewallProxyInputChange(\'proxy-port\')" size="5" class="form-control proxy" onkeypress="return portKeyPress(\'proxy-port\', event)" id="proxy-port" disabled="disabled" value="' + proxy.port + '"/>' +
         '</div>' +
         '</div>' +
 
-        '<div class="asat-group disabled proxy-auth" onclick="enableParam(\'proxy-auth\', event)">' +
-        '<span class="fa-stack fa-lg">' +
-        '<i class="fa fa-square-o fa-stack-2x"></i>' +
-        '<i class="fa fa-share-alt fa-stack-1x"></i>' +
+        '<div class="proxy-auth">' +
+        '<i class="fa fa-square-o fa-lg deployment" id="proxy-auth" onclick="fwSwictchChange(\'proxy-auth\')"> '+
+        '<span class="capwap disabled asat-group-addon">Proxy Authentication</span>' +
+        '</i>' +
+        '<span class="controls">' +
+        '<input name="ace-switch-proxy-auth" class="ace-switch ace-switch-7" type="checkbox" disabled="disabled" checked="checked">' +
+        '<span class="lbl switch-label"></span>' +
         '</span>' +
-        '<i class="fa fa-plus"></i>' +
-        '<span class="fa-stack fa-lg">' +
-        '<i class="fa fa-square-o fa-stack-2x"></i>' +
-        '<i class="fa fa-lock fa-stack-1x"></i>' +
-        '</span>' +
-        '<span class="proxy-auth disabled asat-group-addon" >Proxy Authentication</span>' +
-        '<div class="input-group">' +
+        '<div class="input-group deployment first">' +
         '<span class="input-group-addon">Username:</span>' +
         '<input type="text" class="form-control proxy-auth" id="proxy-user" disabled="disabled" value="' + proxy.user + '"/>' +
         '</div>' +
-        '<div class="input-group">' +
+        '<div class="input-group deployment first">' +
         '<span class="input-group-addon">Password:</span>' +
         '<input type="password" class="form-control proxy-auth" id="proxy-password" disabled="disabled" value="' + proxy.password + '"/>' +
         '</div>' +
@@ -414,12 +415,13 @@ function proxyConfiguration(type) {
 
 
 function saveProxy(type) {
-    proxy.configured = $("div.proxy").hasClass("enabled");
+    proxy.configured = $("#proxy").hasClass("fa-check-square-o");
     proxy.host = $("#proxy-host").val();
     proxy.port = $("#proxy-port").val();
-    proxy.auth = $("div.proxy-auth").hasClass("enabled");
+    proxy.auth = $("#proxy-auth").hasClass("fa-check-square-o");
     proxy.user = $("#proxy-user").val();
     proxy.password= $("#proxy-password").val();
+    console.log(proxy);
     displayFirewallDestinations(type);
 }
 
@@ -454,18 +456,23 @@ function firewallProxyInputChange(param){
 
 
 
-function enableParam(formGroup, event) {
+function fwSwictchChange(formGroup) {
     switch (formGroup) {
         case 'proxy':
-            formGroupState('proxy', event);
-            break;
-        case 'proxy-auth':
-            if ($("div.proxy-auth").hasClass("disabled")) {
-                if ($("div.proxy").hasClass("disabled")) {
-                    formGroupState('proxy', event);
+            formGroupState2('proxy');
+            if ($("#proxy").hasClass("fa-square-o")) {
+                if ($("#proxy-auth").hasClass("fa-check-square-o")) {
+                    formGroupState2('proxy-auth');
                 }
             }
-            formGroupState('proxy-auth', event);
+            break;
+        case 'proxy-auth':
+            formGroupState2('proxy-auth');
+            if ($("#proxy-auth").hasClass("fa-check-square-o")) {
+                if ($("#proxy").hasClass("fa-square-o")) {
+                    formGroupState2('proxy');
+                }
+            }
             break;
     }
 }
@@ -501,7 +508,7 @@ function hm6TypeDisplay() {
         '<div  class="dropdown">' +
         '<button id="hm6DcTypeDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
         '<span class="list">' + hm6DcTypeList[hm6.dc_type] + '</span>' +
-        '<span class="caret"></span>' +
+        '<div><span class="caret"></span></div>' +
         '</button>' +
         '<ul class="dropdown-menu" aria-labelledby="dLabel">';
     for (var hm6DcType in hm6DcTypeList) {
@@ -529,7 +536,7 @@ function hm6DcDisplay() {
         '<div class="dropdown">' +
         '<button id="hm6DcAreaDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
         '<span class="list">' + hm6DcList[hm6.dc_area] + '</span>' +
-        '<span class="caret"></span>' +
+        '<div><span class="caret"></span></div>' +
         '</button>' +
         '<ul class="dropdown-menu" aria-labelledby="dLabel">';
     for (var hm6Dc in hm6DcList) {
@@ -601,7 +608,7 @@ function hmNgDcDisplay() {
         '<div class="dropdown">' +
         '<button id="hm6DcAreaDropDown" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">' +
         '<span class="list">' + hmNgDcList[hmng.dc_area] + '</span>' +
-        '<span class="caret"></span>' +
+        '<div><span class="caret"></span></div>' +
         '</button>' +
         '<ul class="dropdown-menu" aria-labelledby="dLabel">';
     for (var hmNgDc in hmNgDcList) {

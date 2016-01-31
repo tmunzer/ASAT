@@ -5,9 +5,9 @@
   "window": {
     "title": "Aerohive Stand Alone Tool",
     "toolbar": true,
-    "width": 800,
+    "width": 1000,
     "height": 600,
-    "resizable": false,
+    "resizable": true,
     "icon": "./images/aerohive_icon.gif"
   },
   "dependencies": {

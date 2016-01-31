@@ -19,25 +19,47 @@ function formGroupState(formGroup, event) {
         }
     }
 }
-
-function resumeFormGroupState(formGroup, value) {
-    var div = $('div.' + formGroup);
-    if (value) {
-        div.removeClass("disabled").addClass("enabled");
+function formGroupState2(formGroup) {
+    var elem = $('#' + formGroup);
+    if (elem.hasClass("fa-square-o")) {
+        elem.removeClass("fa-square-o").addClass("enabled").addClass("fa-check-square-o");
         $("input." + formGroup).prop("disabled", false);
+        $('input#switch-' + formGroup).prop('disabled', false);
         $("span." + formGroup).each(function () {
             $(this).removeClass("disabled").addClass("enabled");
         });
         $("button." + formGroup).removeClass("disabled").addClass("enabled");
     }
     else {
-        div.addClass("disabled").removeClass("enabled");
+        elem.addClass("fa-square-o").removeClass("enabled").removeClass("fa-check-square-o");
         $("input." + formGroup).prop("disabled", true);
+        $('input#switch-' + formGroup).prop('disabled', true);
         $("span." + formGroup).each(function () {
             $(this).addClass("disabled").removeClass("enabled");
         });
         $("button." + formGroup).addClass("disabled").removeClass("enabled");
     }
+}
+
+function resumeFormGroupState(formGroup, value) {
+    if (value.enable){
+        $('#' + formGroup).removeClass("fa-square-o").addClass("enabled").addClass("fa-check-square-o");
+        $("button." + formGroup).removeClass("disabled").addClass("enabled");
+        if (value.hasOwnProperty("configured")){
+            $("input.switch-"+formGroup).prop("disabled", !value.configured);
+        }
+    } else {
+        $('#' + formGroup).addClass("fa-square-o").removeClass("enabled").removeClass("fa-check-square-o");
+        $("button." + formGroup).addClass("disabled").removeClass("enabled");
+        if (value.hasOwnProperty("configured")){
+            $("input.switch-"+formGroup).prop("disabled", true);
+        }
+    }
+    $("input." + formGroup).prop("disabled", !value.enable);
+    var formSwitch = $("#switch-" + formGroup);
+    formSwitch.prop("disabled", !value.enable);
+    formSwitch.prop("checked", value.configured);
+
 }
 
 
@@ -69,3 +91,15 @@ function portKeyPress(elem, event) {
         } else return true;
     } else return false;
 }
+function vlanKeyPress(event) {
+    return (event.charCode >= 48 && event.charCode <= 57);
+}
+
+function ipKeyPress(event){
+    return ((event.charCode >= 48 && event.charCode <= 57) || event.charCode == 46);
+}
+
+function networkKeyPress(event){
+    return (event.charCode >= 46 && event.charCode <= 57);
+}
+

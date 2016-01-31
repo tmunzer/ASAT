@@ -1,8 +1,9 @@
 var Client = require('ssh2').Client;
 
-module.exports.connectDevice = function (ip, credentialas, commands, asatConsole, callback) {
+module.exports.connectDevice = function (ip, credentials, commands, asatConsole, callback) {
     var conn = new Client();
     var error = false;
+    var warning = false;
     var stdout = "";
     var i = 0;
 
@@ -32,15 +33,29 @@ module.exports.connectDevice = function (ip, credentialas, commands, asatConsole
                 });
         });
     }).on("error", function (err) {
-        asatConsole.debug(err.message);
-        callback(err.message, stdout);
+        if (err.level == "client-timeout") {
+            error = ip + ": timeout";
+            asatConsole.debug(error);
+        }
+        else if (err.level == "client-authentication") {
+            warning = ip + ": authentication failed";
+            asatConsole.error(warning);
+        }
+        else if (err.level == "client-socket"){
+            error = ip + ": connection refused";
+            asatConsole.error(error);
+        } else {
+            error = ip + ": " + err.message;
+            asatConsole.error(error);
+        }
+        callback(error, warning, stdout);
     }).on("end", function () {
-        callback(error, stdout);
+        if (error == false && warning == false) callback(error, warning, stdout);
     }).connect({
         host: ip,
         port: 22,
-        username: credentialas.login,
-        password: credentialas.password,
-        readyTimeout: 500
+        username: credentials.login,
+        password: credentials.password,
+        readyTimeout: 1000
     });
 };
