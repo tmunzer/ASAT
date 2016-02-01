@@ -1,12 +1,12 @@
-var currentRelease = "0.1.4";
-var buildDate = "January 17, 2016";
+var currentRelease = gui.App.manifest.version;
+var buildDate = "January 31, 2016";
 
 var platform = process.platform;
 if (process.platform == "darwin") platform = "macos";
 
 var architecture = process.arch;
+var githubFileName = 'asat-'+architecture+".zip";
 
-var githubFileName = "asat-macos.nw";
 
 var https = require('https');
 var fs = require('fs');
@@ -60,7 +60,10 @@ function checkUpdate() {
         } else {
             htmlString = "<h3> ASAT " + release.tag_name + " is available " +
                 "<button id='dlFromGithub' onclick='downloadUpdate(\"" + release.tag_name + "\")' class='btn btn-default'>" +
-                "Download From GitHub <i class='fa fa-github'></i>" +
+                "Download From GitHub <i class='fa fa-download'></i>" +
+                "</button>" +
+                "<button onclick='gui.Shell.openExternal(\"https://github.com/tmunzer/ASAT/releases/latest\")'  class='btn btn-default'>" +
+                "View On GitHub <i class='fa fa-github'></i>" +
                 "</button><br>" +
                 "</h3>";
         }
@@ -90,12 +93,12 @@ function checkUpdate() {
 
 
 function downloadUpdate(tag_name) {
-    $('#dlFromGithub').prop('disabled', true);
-    $("#cuFromGithub").prop('disabled', true);
     document.getElementById("saveFileId").innerHTML = "<input type='file' nwsaveas='asat.zip' id='saveFileDialog'/>";
     var filename = "";
     var chooser = $("#saveFileDialog");
     chooser.change(function() {
+        $('#dlFromGithub').prop('disabled', true);
+        $("#cuFromGithub").prop('disabled', true);
         filename = ($(this).val());
         console.log(filename);
         console.log(tag_name);
@@ -113,18 +116,33 @@ function getLocation(filanme, tag_name){
     var data = "";
     var url = 'https://github.com/tmunzer/ASAT/releases/download/'+ tag_name + "/" + githubFileName;
     https.get(url, function (res) {
-        console.log(res);
-        res.on('data', function (chunk) {
-            data += chunk;
-        });
-        res.on('error', function(err){
-            console.log(err);
-        });
-        res.on('end', function () {
-            var location = data.split('href="')[1].split('">')[0];
-            console.log(location);
-            getFile(filanme, location);
-        });
+        if (res.statusCode >= 400){
+            $('.progress-bar').addClass("progress-bar-danger")
+                .css('width', '100%')
+                .attr('aria-valuenow', '100%')
+                .text("Error. Please visit the GitHub page.")
+                .removeClass("progress-bar-striped active");
+            $('#dlFromGithub').prop('disabled', false);
+            $("#cuFromGithub").prop('disabled', false);
+            asatConsole.error("Unable to download the latest version. Got error code " + res.statusCode + ": " + res.statusMessage);
+        } else {
+            res.on('data', function (chunk) {
+                data += chunk;
+            });
+            res.on('error', function(err){
+                $('.progress-bar').addClass("progress-bar-danger")
+                    .css('width', '100%')
+                    .attr('aria-valuenow', '100%')
+                    .text("Error. Please visit the GitHub page.")
+                    .removeClass("active");
+                asatConsole.error("Unable to download the latest version. Got error " + err);
+            });
+            res.on('end', function () {
+                var location = data.split('href="')[1].split('">')[0];
+                getFile(filanme, location);
+            });
+        }
+
     });
 }
 

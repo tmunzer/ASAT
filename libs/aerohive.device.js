@@ -1,5 +1,6 @@
-module.exports = function(ipAddress, valid, macAddress, serialNumber, deviceType, comment) {
+module.exports = function(ipAddress, valid, hostname, macAddress, serialNumber, deviceType, comment) {
     this.ipAddress = ipAddress;
+    this.hostname = hostname || "";
     this.isValid = valid;
     this.comment = comment || "";
     this.macAddress = "";
@@ -15,11 +16,12 @@ module.exports = function(ipAddress, valid, macAddress, serialNumber, deviceType
             ipAddress : "",
             netmask: "",
             gateway: "",
-            nativeVlan: "1",
-            mgmtVlan: "1"
+            nativeVlan: "",
+            mgmtVlan: ""
         };
-    };
+    }
     this.selected = false;
+    this.cidr = "";
 };
 
 function validateSN(serial) {

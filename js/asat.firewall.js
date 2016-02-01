@@ -236,10 +236,10 @@ function startFirewallTest(type) {
             //UDP
             if (test.PROTO_ID == "2") {
                 if (proxy.configured) {
-                    displayResult(test.TEST_ID, null, null, null, true);
+                    displayResultIcon("firewall-entry", test.TEST_ID, null, null, null, "Can't perform this test when the proxy is enabled", true);
                 } else {
                     new UDPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, function (error, warning, success) {
-                        displayResult(this.test.TEST_ID, error, warning, success)
+                        displayResultIcon("firewall-entry", this.test.TEST_ID, error, warning, success, null, true);
                     }.bind({test: test}));
                 }
 
@@ -247,20 +247,20 @@ function startFirewallTest(type) {
             } else if (test.PROTO_ID == "1") {
                 if (test.PORT == 80) {
                     new HTTPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, proxy, function (error, warning, success) {
-                        displayResult(this.test.TEST_ID, error, warning, success)
+                        displayResultIcon("firewall-entry", this.test.TEST_ID, error, warning, success, null, true);
                     }.bind({test: test}));
                 } else if (test.PORT == 443) {
                     new HTTPSTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, proxy, function (error, warning, success) {
-                        displayResult(this.test.TEST_ID, error, warning, success)
+                        displayResultIcon("firewall-entry", this.test.TEST_ID, error, warning, success, null, true);
                     }.bind({test: test}));
                     //displayResult(test.TEST_ID, null, null, true);
 
                 } else {
                     if (proxy.configured) {
-                        displayResult(test.TEST_ID, null, null, null, true);
+                        displayResultIcon("firewall-entry", test.TEST_ID, null, null, null, "Can't perform this test when the proxy is enabled", true);
                     } else {
                         new TCPTest(test.getHost(hm6, hmng), test.PORT, test.TEST_ID, asatConsole, function (error, warning, success) {
-                            displayResult(this.test.TEST_ID, error, warning, success)
+                            displayResultIcon("firewall-entry", this.test.TEST_ID, error, warning, success, null, true);
                         }.bind({test: test}));
                     }
                 }
@@ -268,52 +268,6 @@ function startFirewallTest(type) {
         }
     }
 }
-
-/* ===================================================
- ====================== QTIP =========================
- =================================================== */
-
-function displayResult(testId, error, warning, success, notWithProxy) {
-    var qtipText = "";
-    var qtipTitle = "";
-    var qtipClass = "";
-    if (error) {
-        qtipTitle = "Error";
-        qtipText = error;
-        qtipClass = "error";
-        $("#firewall-entry-" + testId).html("<i id='result-" + testId + "' class='fa fa-times-circle' style='color: red'></i>");
-    } else if (warning) {
-        qtipTitle = "Warning";
-        qtipText = warning;
-        qtipClass = "warning";
-        $("#firewall-entry-" + testId).html("<i id='result-" + testId + "' class='fa fa-warning' style='color: orange'></i>");
-    } else if (notWithProxy) {
-        qtipTitle = "Proxy enabled";
-        qtipText = "Can't perform this test when the proxy is enabled";
-        qtipClass = "proxy";
-        $("#firewall-entry-" + testId).html("<i id='result-" + testId + "' class='fa fa-exclamation-circle' style='color: dodgerblue'></i>");
-    } else {
-        qtipTitle = "Success";
-        qtipText = success;
-        qtipClass = "success";
-        $("#firewall-entry-" + testId).html("<i id='result-" + testId + "' class='fa fa-check-circle' style='color: green'></i>");
-    }
-
-    $("#result-" + testId).qtip({
-        content: {
-            text: qtipText,
-            title: qtipTitle
-        },
-        position: {
-            my: "right center",
-            at: "left center"
-        },
-        style: {
-            classes: "qtip-shadow qtip-" + qtipClass
-        }
-    })
-}
-
 
 /* ===================================================
  ======================== BUTTONS ====================

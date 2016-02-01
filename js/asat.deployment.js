@@ -3,23 +3,6 @@ var db = require("./libs/sqlite.main");
 var Netmask = require("netmask").Netmask;
 
 
-var os = require('os');
-var interfaces = os.networkInterfaces();
-var addresses = [];
-for (var k in interfaces) {
-    for (var k2 in interfaces[k]) {
-        var address = interfaces[k][k2];
-        if (address.family === 'IPv4' && !address.internal) {
-            var cidr = address.address + "/" + address.netmask;
-            var block = new Netmask(cidr);
-            addresses.push(block.base + "/" + block.bitmask);
-        }
-    }
-}
-
-var network = addresses[0];
-
-
 var Discover = require("./libs/deployment.discover");
 var Deploy = require("./libs/deployment.deploy");
 var Device = require('./libs/aerohive.device');
@@ -29,11 +12,11 @@ var credentials = {
     login: "admin",
     password: "aerohive"
 };
-//var network = "192.168.1.0/24";
 
+var network = null;
 var deviceList = [];
 var countryList = {};
-
+var htmlString = "";
 
 var commonParam = {
     region: {
@@ -88,9 +71,27 @@ var commonParam = {
  =================================================== */
 
 function initDeployment() {
+    if (network == null) {
+        var os = require('os');
+        var interfaces = os.networkInterfaces();
+        var addresses = [];
+        for (var k in interfaces) {
+            for (var k2 in interfaces[k]) {
+                var address = interfaces[k][k2];
+                if (address.family === 'IPv4' && !address.internal) {
+                    var cidr = address.address + "/" + address.netmask;
+                    var block = new Netmask(cidr);
+                    addresses.push(block.base + "/" + block.bitmask);
+                }
+            }
+        }
+        network =  addresses[0];
+    }
     db.CountryCode.getArray(function (res) {
         countryList = res;
         displayDeployment();
+        //displayCommonParam();
+        //displayNetworkParam();
     })
 }
 
@@ -102,26 +103,26 @@ function initDeployment() {
 var deviceNumber = 0;
 var deviceCount = 0;
 var discoverProcess = 0;
-messenger.on("deployment discover start", function (process, devCount) {
+messenger.on("depl discover start", function (process, devCount) {
     deviceCount = devCount;
     deviceNumber = 0;
-}).on("deployment discover ip error", function (process) {
+}).on("depl discover ip error", function (process) {
     if (discoverProcess == process) {
         deviceNumber++;
         var percent = (deviceNumber / deviceCount) * 100;
         $('.progress-bar').css('width', percent.toFixed(1) + '%').attr('aria-valuenow', percent.toFixed(1)).text(deviceNumber + "/" + deviceCount);
     }
-}).on("deployment discover ip done", function (process, device) {
+}).on("depl discover ip done", function (process, device) {
     if (discoverProcess == process) {
         deviceNumber++;
         var percent = (deviceNumber / deviceCount) * 100;
         if (device) newDevice(device);
         $('.progress-bar').css('width', percent.toFixed(1) + '%').attr('aria-valuenow', percent.toFixed(1)).text(deviceNumber + "/" + deviceCount);
     }
-}).on('deployment discover stop', function () {
+}).on('depl discover stop', function () {
     $('.progress-bar').css('width', '100%').text("Stopping test...").addClass("progress-bar-danger");
     $("#find-stop").prop("disabled", true);
-}).on('deployment discover end', function (process) {
+}).on('depl discover end', function (process) {
     if (discoverProcess == process) {
         $('.progress-bar').css('width', '100%').attr('aria-valuenow', deviceCount + "/" + deviceCount);
         $("#find-start").prop("disabled", false);
@@ -131,51 +132,54 @@ messenger.on("deployment discover start", function (process, devCount) {
 });
 
 function displayDeployment() {
-    // change the breadcrumb status
-    $(".deployment-button").removeClass("fa-circle").addClass("fa-circle-o");
-    $("#deployment-find").removeClass("fa-circle-o").addClass("fa-circle");
-    // create HTML
-    document.getElementById("deployment-window").innerHTML =
-        '<div style="width: 100%; overflow: hidden;">' +
-        '<div class="input-group" style="width: 40%; float: left">' +
-        '<span class="input-group-addon"">Network:</span>' +
-        '<input type="text" onkeypress="return networkKeyPress(event)" onchange="changeNetDisco()" class="form-control" value="' + network + '" id="network"/>' +
-        '</div>' +
-        '<div class="input-group" style="width: 40%; margin: auto">' +
-        '<span class="input-group-addon" >Password:</span>' +
-        '<input type="password" class="form-control" value="' + credentials.password + '" id="password"/>' +
-        '</div>' +
-        '</div>' +
-        "<hr>" +
-        '<div style="width:100%;">' +
-        "<div id='progress-bar' class='progress deployment'>" +
-        "<div class='progress-bar' role='progressbar' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'>" +
-        "</div>" +
-        "</div>" +
-        "</div>" +
-        "<hr>" +
-        "<button id='find-start' onclick='startDiscovery()' class='btn btn-default update'>Start</button>" +
-        "<button id='find-stop' onclick='stopDiscovery()' class='btn btn-default update' disabled='disabled'>Stop</button>" +
-        "<button id='find-clear' onclick='clearDiscovery()' class='btn btn-default update'>Clear</button>" +
-        "<button id='find-select' onclick='selectAllDiscovery()' class='btn btn-default update' disabled='disabled'>Select All</button>" +
-        "<button id='find-unselect' onclick='unselectAllDiscovery()' class='btn btn-default update' disabled='disabled'>Unselect All</button>" +
-        "<table class='table asat-table'>" +
-        "<thead>" +
-        "<tr>" +
-        "<th>IP Address</th>" +
-        "<th>Type</th>" +
-        "<th>Serial Number</th>" +
-        "<th>MAC Address</th>" +
-        "<th>Comment</th>" +
-        "</tr>" +
-        "</thead>" +
-        "<tbody id='table-deployment'>" +
-        "" +
-        "</tbody>" +
-        "</table>";
-    document.getElementById("deployment-action").innerHTML =
-        '<button id="depl-button-next" class="next btn btn-default" disabled="disabled"  onclick="displayCommonParam()" >Next</button>';
-    displayDevices();
+    if (htmlString == "" || $("#depl").is(":visible")){
+        // change the breadcrumb status
+        $(".depl-button").removeClass("fa-circle").addClass("fa-circle-o");
+        $("#depl-find").removeClass("fa-circle-o").addClass("fa-circle");
+        // create HTML
+        htmlString = '<div style="width: 100%; overflow: hidden;">' +
+            '<div class="input-group" style="width: 40%; float: left">' +
+            '<span class="input-group-addon"">Network:</span>' +
+            '<input type="text" onkeypress="return networkKeyPress(event)" onchange="changeNetDisco()" class="form-control" value="' + network + '" id="network"/>' +
+            '</div>' +
+            '<div class="input-group" style="width: 40%; margin: auto">' +
+            '<span class="input-group-addon" >Password:</span>' +
+            '<input type="password" class="form-control" value="' + credentials.password + '" id="password"/>' +
+            '</div>' +
+            '</div>' +
+            "<hr>" +
+            '<div style="width:100%;">' +
+            "<div id='progress-bar' class='progress depl'>" +
+            "<div class='progress-bar' role='progressbar' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'>" +
+            "</div>" +
+            "</div>" +
+            "</div>" +
+            "<hr>" +
+            "<button id='find-start' onclick='startDiscovery()' class='btn btn-default update'>Start</button>" +
+            "<button id='find-stop' onclick='stopDiscovery()' class='btn btn-default update' disabled='disabled'>Stop</button>" +
+            "<button id='find-clear' onclick='clearDiscovery()' class='btn btn-default update'>Clear</button>" +
+            "<button id='find-select' onclick='selectAllDiscovery()' class='btn btn-default update' disabled='disabled'>Select All</button>" +
+            "<button id='find-unselect' onclick='unselectAllDiscovery()' class='btn btn-default update' disabled='disabled'>Unselect All</button>" +
+            "<table class='table asat-table'>" +
+            "<thead>" +
+            "<tr>" +
+            "<th>IP Address</th>" +
+            "<th>Hostname</th>" +
+            "<th>Type</th>" +
+            "<th>Serial Number</th>" +
+            "<th>MAC Address</th>" +
+            "<th>Comment</th>" +
+            "</tr>" +
+            "</thead>" +
+            "<tbody id='table-depl'>" +
+            "" +
+            "</tbody>" +
+            "</table>";
+        document.getElementById("depl-window").innerHTML = htmlString;
+        document.getElementById("depl-action").innerHTML =
+                '<button id="depl-button-next" class="next btn btn-default" disabled="disabled"  onclick="displayCommonParam()" >Next</button>';
+        displayDevices();
+    }
 }
 
 function displayDevices() {
@@ -197,13 +201,14 @@ function displayDevices() {
         }
         htmlString +=
             '<td>' + deviceList[i].ipAddress + '</td>' +
+            '<td>' + deviceList[i].hostname + '</td>' +
             '<td>' + deviceList[i].deviceType + '</td>' +
             '<td>' + deviceList[i].serialNumber + '</td>' +
             '<td>' + deviceList[i].macAddress + '</td>' +
             '<td>' + deviceList[i].comment + '</td>' +
             '</tr>';
     }
-    $('#table-deployment').html(htmlString);
+    $('#table-depl').html(htmlString);
     nextButtonState();
 }
 function startDiscovery() {
@@ -217,7 +222,7 @@ function startDiscovery() {
     Discover.discover(discoverProcess, cidr, credentials, 10, asatConsole, messenger);
 }
 function stopDiscovery() {
-    messenger.emit("deployment discover stop");
+    messenger.emit("depl discover stop");
 }
 function clearDiscovery() {
     deviceList = [];
@@ -292,17 +297,18 @@ function selectDevice(i) {
 function changeNetDisco() {
     var elem = $('#network');
     var isValid = false;
-    var network = elem.val().split("/");
-    if (network.length == 2) {
-        var ip = network[0];
-        var mask = network[1];
-        if (valideateIP(ip)) {
+    var networkSplitted = elem.val().split("/");
+    if (networkSplitted.length == 2) {
+        var ip = networkSplitted[0];
+        var mask = networkSplitted[1];
+        if (validateIP(ip)) {
             if (mask != "" && mask >= 0 && mask <= 32) {
                 isValid = true;
             }
         }
     }
     if (isValid) {
+        network = elem.val();
         elem.removeClass("isNotValid");
         $("#find-start").prop("disabled", false);
     } else {
@@ -316,19 +322,18 @@ function changeNetDisco() {
  =================================================== */
 function displayCommonParam() {
     // change the breadcrumb status
-    $(".deployment-button").removeClass("fa-circle").addClass("fa-circle-o");
-    $("#deployment-common").removeClass("fa-circle-o").addClass("fa-circle");
+    $(".depl-button").removeClass("fa-circle").addClass("fa-circle-o");
+    $("#depl-common").removeClass("fa-circle-o").addClass("fa-circle");
 
-    var htmlString =
-
-        '<div style="width: 70%; margin: auto">' +
+    htmlString =
+        '<div style="width: 85%; margin: auto">' +
         "<div class='ui-sec-tle'><h3>Radio</h3></div>" +
 
         '<div class="region">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="region" onclick="deplEnableParam(\'region\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="region" onclick="deplEnableParam(\'region\')"> ' +
         '<span class="region disabled asat-group-addon">Region: </span>' +
         '</i>' +
-        '<span  class="dropdown deployment">' +
+        '<span  class="dropdown depl">' +
         '<button type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="disabled region">' +
         '<span class="list"  id="dropdown-region">' + commonParam.region.value + '</span>' +
         '<div><span class="caret"></span></div>' +
@@ -341,10 +346,10 @@ function displayCommonParam() {
         '</div>' +
 
         '<div class="country">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="country" onclick="deplEnableParam(\'country\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="country" onclick="deplEnableParam(\'country\')"> ' +
         '<span class="country disabled asat-group-addon">Country Code: </span>' +
         '</i>' +
-        '<span  class="dropdown deployment">' +
+        '<span  class="dropdown depl">' +
         '<button type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" class="disabled country">' +
         '<span class="list"  id="dropdown-country">' + countryList[commonParam.country.value] + '</span>' +
         '<div><span class="caret"></span></div>' +
@@ -360,20 +365,20 @@ function displayCommonParam() {
         "<div class='ui-sec-tle'><h3>Network</h3></div>" +
 
         '<div class="dns">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="dns" onclick="deplEnableParam(\'dns\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="dns" onclick="deplEnableParam(\'dns\')"> ' +
         '<span class="dns disabled asat-group-addon">DNS</span>' +
         '</i>' +
-        '<div class="input-group deployment">' +
+        '<div class="input-group depl">' +
         '<span class="input-group-addon" >Server IP :</span>' +
         '<input type="text" onchange="inputChange(\'dns\')" onkeypress="return ipKeyPress(event)" class="form-control dns" id="dns-host" disabled="disabled" value="' + commonParam.dns.value + '"/>' +
         '</div>' +
         '</div>' +
 
         '<div class="ntp">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="ntp" onclick="deplEnableParam(\'ntp\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="ntp" onclick="deplEnableParam(\'ntp\')"> ' +
         '<span class="ntp disabled asat-group-addon">NTP Server</span>' +
         '</i>' +
-        '<div class="input-group deployment">' +
+        '<div class="input-group depl">' +
         '<span class="input-group-addon" >Server IP/Hostname :</span>' +
         '<input type="text" onchange="inputChange(\'ntp\')" class="form-control ntp" id="ntp-host" disabled="disabled" value="' + commonParam.ntp.value + '"/>' +
         '</div>' +
@@ -382,18 +387,18 @@ function displayCommonParam() {
         "<div class='ui-sec-tle'><h3>CAPWAP</h3></div>" +
 
         '<div class="capwap">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="capwap" onclick="deplEnableParam(\'capwap\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="capwap" onclick="deplEnableParam(\'capwap\')"> ' +
         '<span class="capwap disabled asat-group-addon">CAPWAP Server</span>' +
         '</i>' +
         '<span class="controls">' +
         '<input name="services-field-1" class="ace-switch ace-switch-8" id="switch-capwap" type="checkbox" disabled="disabled" checked="checked" onchange="deplSwictchChange(\'capwap\')">' +
         '<span class="lbl switch-label"></span>' +
         '</span>' +
-        '<div class="input-group deployment first">' +
+        '<div class="input-group depl first">' +
         '<span class="input-group-addon" >Server IP/Hostname :</span>' +
         '<input type="text" onchange="inputChange(\'capwap-server\')" class="form-control switch-capwap" id="capwap-server" disabled="disabled" value="' + commonParam.capwap.server + '"/>' +
         '</div>' +
-        '<div class="input-group deployment first">' +
+        '<div class="input-group depl first">' +
         '<span class="input-group-addon" >Port :</span>' +
         '<input type="text" class="switch-capwap form-control"  onchange="inputChange(\'capwap-port\')" onkeypress="return portKeyPress(\'capwap-port\', event)" id="capwap-port" disabled="disabled" value="' + commonParam.capwap.port + '"/>' +
         '</div>' +
@@ -401,7 +406,7 @@ function displayCommonParam() {
 
 
         '<div class="http">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="http" onclick="deplEnableParam(\'http\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="http" onclick="deplEnableParam(\'http\')"> ' +
         '<span class="capwap disabled asat-group-addon">HTTP Encapsulation</span>' +
         '</i>' +
         '<span class="controls">' +
@@ -412,36 +417,36 @@ function displayCommonParam() {
 
 
         '<div class="proxy">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="proxy" onclick="deplEnableParam(\'proxy\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="proxy" onclick="deplEnableParam(\'proxy\')"> ' +
         '<span class="capwap disabled asat-group-addon">CAPWAP Proxy</span>' +
         '</i>' +
         '<span class="controls">' +
         '<input name="ace-switch-proxy" class="ace-switch ace-switch-7" id="switch-proxy" type="checkbox" disabled="disabled" checked="checked" onchange="deplSwictchChange(\'proxy\')">' +
         '<span class="lbl switch-label"></span>' +
         '</span>' +
-        '<div class="input-group deployment first">' +
+        '<div class="input-group depl first">' +
         '<span class="input-group-addon">Host:</span>' +
         '<input type="text" onchange="inputChange(\'proxy-host\')" class="form-control switch-proxy" id="proxy-host" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
         '</div>' +
-        '<div class="input-group deployment first">' +
+        '<div class="input-group depl first">' +
         '<span class="input-group-addon">Port:</span>' +
         '<input type="text" onchange="inputChange(\'proxy-port\')" size="5" class="form-control switch-proxy" onkeypress="return portKeyPress(\'proxy-port\', event)" id="proxy-port" disabled="disabled" value="' + commonParam.capwap.http.proxy.port + '"/>' +
         '</div>' +
         '</div>' +
 
         '<div class="proxy-auth">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="proxy-auth" onclick="deplEnableParam(\'proxy-auth\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="proxy-auth" onclick="deplEnableParam(\'proxy-auth\')"> ' +
         '<span class="capwap disabled asat-group-addon">Proxy Authentication</span>' +
         '</i>' +
         '<span class="controls">' +
         '<input name="ace-switch-proxy-auth" class="ace-switch ace-switch-7" id="switch-proxy-auth" type="checkbox" disabled="disabled" checked="checked" onchange="deplSwictchChange(\'proxy-auth\')">' +
         '<span class="lbl switch-label"></span>' +
         '</span>' +
-        '<div class="input-group deployment first">' +
+        '<div class="input-group depl first">' +
         '<span class="input-group-addon">Username:</span>' +
         '<input type="text" onchange="inputChange(\'proxy-user\')" class="form-control switch-proxy-auth" id="proxy-user" disabled="disabled" value="' + commonParam.capwap.http.proxy.auth.user + '"/>' +
         '</div>' +
-        '<div class="input-group deployment first">' +
+        '<div class="input-group depl first">' +
         '<span class="input-group-addon">Password:</span>' +
         '<input type="password" onchange="inputChange(\'proxy-password\')" class="form-control switch-proxy-auth" id="proxy-password" disabled="disabled" value="' + commonParam.capwap.http.proxy.auth.password + '"/>' +
         '</div>' +
@@ -451,19 +456,19 @@ function displayCommonParam() {
         "<div class='ui-sec-tle'><h3>System</h3></div>" +
 
         '<div class="save">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="save" onclick="deplEnableParam(\'save\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="save" onclick="deplEnableParam(\'save\')"> ' +
         '<span class="capwap disabled asat-group-addon">Save Configuration (Persistent after reboot)</span>' +
         '</i>' +
         '</div>' +
         '<div class="reboot">' +
-        '<i class="fa fa-square-o fa-lg deployment" id="reboot" onclick="deplEnableParam(\'reboot\')"> ' +
+        '<i class="fa fa-square-o fa-lg depl" id="reboot" onclick="deplEnableParam(\'reboot\')"> ' +
         '<span class="capwap disabled asat-group-addon">Reboot Device</span>' +
         '</i>' +
         '</div>' +
         '</div>';
-    document.getElementById("deployment-window").innerHTML = htmlString;
+    document.getElementById("depl-window").innerHTML = htmlString;
     resumeParam();
-    document.getElementById("deployment-action").innerHTML =
+    document.getElementById("depl-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayDeployment()">Back</button>' +
         '<button id="depl-button-next" class="next btn btn-default" onclick="displayNetworkParam()" >Next</button>';
 }
@@ -508,7 +513,7 @@ function inputChange(param) {
             // if "dns", check the validity of the value
             // if the value is valide, assign it to the commonParam
             elem = $('#dns-host');
-            isValid = valideateIP(elem.val());
+            isValid = validateIP(elem.val());
             if (isValid) commonParam.dns.value = elem.val();
             break;
         case "ntp":
@@ -780,13 +785,15 @@ function resumeParam() {
  =================================================== */
 
 function displayNetworkParam() {
+    var disabledByDhcp = "";
+    var disabledButtonByDhcp = "";
     // change the breadcrumb status
-    $(".deployment-button").removeClass("fa-circle").addClass("fa-circle-o");
-    $("#deployment-network").removeClass("fa-circle-o").addClass("fa-circle");
-    var htmlString =
-        "<button id='find-import' onclick='startDiscovery()' class='btn btn-default' disabled='disabled'>Import</button>" +
-        "<button id='find-export' onclick='stopDiscovery()' class='btn btn-default' disabled='disabled'>Export</button>" +
-        "<button id='find-dhcp' onclick='clearDiscovery()' class='btn btn-default'>Configure DHCP Server</button>" +
+    $(".depl-button").removeClass("fa-circle").addClass("fa-circle-o");
+    $("#depl-network").removeClass("fa-circle-o").addClass("fa-circle");
+    htmlString =
+        "<button id='find-import' onclick='' class='btn btn-default' disabled='disabled'>Import</button>" +
+        "<button id='find-export' onclick='' class='btn btn-default' disabled='disabled'>Export</button>" +
+        "<button id='find-dhcp' onclick='dispalyDhcp(\"depl\")' class='btn btn-default'>Configure DHCP Server</button>" +
         '<table class="table asat-table">' +
         '<thead>' +
         '<tr>' +
@@ -801,13 +808,19 @@ function displayNetworkParam() {
         '</thead>' +
         '<tbody>';
     for (var device in deviceList) {
-        if (deviceList[device].selected)
+        if (deviceList[device].selected) {
+            if (dhcpParam.enable && dhcpParam.deviceId == device){
+                if ((deviceList[device].configuration.ipAddress) || (deviceList[device].configuration.netmask)){
+                    disabledByDhcp = "disabled = 'disabled";
+                    disabledButtonByDhcp = "disabled";
+                }
+            }
             htmlString +=
                 '<tr>' +
                 '<td>' + deviceList[device].serialNumber + '</td>' +
                 '<td>' + deviceList[device].macAddress + '</td>' +
                 '<td>' + deviceList[device].ipAddress + '</td>' +
-                '<td><input class="asat-table-input" id="newNet-' + device + '" type="text" placeholder="DHCP client"' +
+                '<td><input class="asat-table-input" '+disabledByDhcp+' id="newNet-' + device + '" type="text" placeholder="DHCP client"' +
                 'onkeypress="return networkKeyPress(event)" onchange="deplNewNet(\'' + device + '\')" size="18" ' +
                 'value="' + deviceList[device].configuration.ipAddress + '"></td>' +
                 '<td><input class="asat-table-input" id="newGw-' + device + '" type="text" placeholder="DHCP client"' +
@@ -820,14 +833,16 @@ function displayNetworkParam() {
                 'onkeypress="return vlanKeyPress(event)" onchange="deplNewVlan(\'newMgmtVlan-\', \'' + device + '\')" type="text" size="5" ' +
                 'value="' + deviceList[device].configuration.mgmtVlan + '"></td>' +
                 '</tr>';
+        }
+
     }
     htmlString +=
         '</tbody>' +
         '</table>';
-    document.getElementById("deployment-window").innerHTML = htmlString;
-    document.getElementById("deployment-action").innerHTML =
+    document.getElementById("depl-window").innerHTML = htmlString;
+    document.getElementById("depl-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayCommonParam()">Back</button>' +
-        '<button id="depl-button-next" class="next btn btn-default" onclick="displaySendConfiguration()" >Next</button>';
+        '<button id="depl-button-next" class="next btn btn-default '+disabledButtonByDhcp+'" onclick="displaySendConfiguration()" >Next</button>';
 
     for (var device in deviceList) {
         if (deviceList[device].selected) {
@@ -869,7 +884,7 @@ function deplNewNet(devId) {
     if (network.length == 2) {
         var ip = network[0];
         var mask = network[1];
-        if (valideateIP(ip)) {
+        if (validateIP(ip)) {
             if (mask != "" && mask >= 0 && mask <= 32) {
                 isValid = true;
             }
@@ -899,7 +914,7 @@ function deplNewGw(devId) {
     var elem = $("#newGw-" + devId);
     var api = $('#qtip-newGw-' + devId).qtip('api');
     if (api) api.destroy(true);
-    if (valideateIP(elem.val())) {
+    if (validateIP(elem.val())) {
         deviceList[devId].configuration.gateway = elem.val();
         elem.removeClass("isNotValid").addClass("isValid");
         deplGwInNet(devId);
@@ -1005,12 +1020,12 @@ function qtipDeplInfo(elem, qtipId, message) {
 
 function displaySendConfiguration() {
     // change the breadcrumb status
-    $(".deployment-button").removeClass("fa-circle").addClass("fa-circle-o");
-    $("#deployment-deploy").removeClass("fa-circle-o").addClass("fa-circle");
-    var htmlString =
+    $(".depl-button").removeClass("fa-circle").addClass("fa-circle-o");
+    $("#depl-deploy").removeClass("fa-circle-o").addClass("fa-circle");
+    htmlString =
         "<hr>" +
         '<div style="width:100%;">' +
-        "<div id='progress-bar' class='progress deployment'>" +
+        "<div id='progress-bar' class='progress depl'>" +
         "<div class='progress-bar' role='progressbar' aria-valuenow='0' aria-valuemin='0' aria-valuemax='100'>" +
         "</div>" +
         "</div>" +
@@ -1075,8 +1090,8 @@ function displaySendConfiguration() {
     htmlString +=
         '</tbody>' +
         '</table>';
-    document.getElementById("deployment-window").innerHTML = htmlString;
-    document.getElementById("deployment-action").innerHTML =
+    document.getElementById("depl-window").innerHTML = htmlString;
+    document.getElementById("depl-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayNetworkParam()">Back</button>' +
         '<button id="depl-button-next" class="next btn btn-default" onclick="startConfiguration()" >Deploy</button>';
 
@@ -1086,7 +1101,7 @@ function displaySendConfiguration() {
  ======================= FINAL =====================
  =================================================== */
 
-messenger.on("deployment deploy start", function (process, devCount) {
+messenger.on("depl deploy start", function (process, devCount) {
     if (process == discoverProcess) {
         deviceCount = devCount;
         deviceNumber = 0;
@@ -1094,12 +1109,12 @@ messenger.on("deployment deploy start", function (process, devCount) {
             $(this).html('<i class="fa fa-circle-o-notch fa-spin"></i>');
         })
     }
-}).on("deployment deploy update", function (process, devNum, error, warning, success) {
-    if (process == discoverProcess) deplDisplayResult(devNum, error, warning, success);
-}).on('deployment deploy stop', function () {
+}).on("depl deploy update", function (process, devNum, error, warning, success) {
+    if (process == discoverProcess) displayResultIcon("depl", devNum, error, warning, success, null, true);
+}).on('depl deploy stop', function () {
     $('.progress-bar').css('width', '100%').text("Stopping test...").addClass("progress-bar-danger");
     $("#find-stop").prop("disabled", true);
-}).on('deployment deploy end', function (process) {
+}).on('depl deploy end', function (process) {
     if (discoverProcess == process) {
         $('.progress-bar').css('width', '100%').attr('aria-valuenow', deviceCount + "/" + deviceCount);
         $("#find-start").prop("disabled", false);
@@ -1110,45 +1125,5 @@ messenger.on("deployment deploy start", function (process, devCount) {
 
 function startConfiguration() {
     discoverProcess++;
-    Deploy.start(discoverProcess, deviceList, commonParam, credentials, 5, asatConsole, messenger);
-}
-
-/* ===================================================
- ====================== QTIP =========================
- =================================================== */
-
-function deplDisplayResult(devId, error, warning, success) {
-    var qtipText = "";
-    var qtipTitle = "";
-    var qtipClass = "";
-    if (error) {
-        qtipTitle = "Error";
-        qtipText = error;
-        qtipClass = "error";
-        $("#deploy-" + devId).html("<i id='result-" + devId + "' class='fa fa-times-circle' style='color: red'></i>");
-    } else if (warning) {
-        qtipTitle = "Warning";
-        qtipText = warning;
-        qtipClass = "warning";
-        $("#deploy-" + devId).html("<i id='result-" + devId + "' class='fa fa-warning' style='color: orange'></i>");
-    } else {
-        qtipTitle = "Success";
-        qtipText = success;
-        qtipClass = "success";
-        $("#deploy-" + devId).html("<i id='result-" + devId + "' class='fa fa-check-circle' style='color: green'></i>");
-    }
-
-    $("#result-" + devId).qtip({
-        content: {
-            text: qtipText,
-            title: qtipTitle
-        },
-        position: {
-            my: "right center",
-            at: "left center"
-        },
-        style: {
-            classes: "qtip-shadow qtip-" + qtipClass
-        }
-    })
+    Deploy.start(discoverProcess, deviceList, commonParam, dhcpParam, credentials, 5, asatConsole, messenger);
 }

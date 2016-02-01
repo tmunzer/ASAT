@@ -60,6 +60,6 @@ module.exports.connectDevice = function (ip, credentials, commands, asatConsole,
         port: 22,
         username: credentials.login,
         password: credentials.password,
-        readyTimeout: 1000
+        readyTimeout: 2000
     });
 };

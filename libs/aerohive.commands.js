@@ -85,23 +85,18 @@ module.exports.setNtp = function (ntp) {
 
 module.exports.getHw = function () {
     return "show hw";
-    return this;
 };
 module.exports.getIntMgt0 = function () {
     return "show interface mgt0";
-    return this;
 };
 module.exports.createNewMgtInterface = function (dhcpInterface, vlan) {
     return "interface " + dhcpInterface + " vlan " + vlan;
-    return this;
 };
-module.exports.setNewMgt0InterfaceIp = function (dhcpInterface, ipAddress, netmask) {
+module.exports.setNewMgtInterfaceIp = function (dhcpInterface, ipAddress, netmask) {
     return "interface " + dhcpInterface + " ip " + ipAddress + "/" + netmask;
-    return this;
 };
 module.exports.setDhcpServerPool = function (dhcpInterface, start, stop) {
     return "interface " + dhcpInterface + " dhcp-server ip-pool " + start + " " + stop;
-    return this;
 };
 module.exports.setDhcpServerArpCheck = function (dhcpInterface, check) {
     var arpCheck = "";
@@ -118,6 +113,12 @@ module.exports.setDhcpServerNetmask = function (dhcpInterface, netmask) {
 };
 module.exports.setDhcpServerDns = function (dhcpInterface, dns) {
     return "interface " + dhcpInterface + " dhcp-server options dns1 " + dns;
+};
+module.exports.setDhcpServerNtp = function (dhcpInterface, ntp) {
+    return "interface " + dhcpInterface + " dhcp-server options ntp1 " + ntp;
+};
+module.exports.setDhcpServerDomain = function (dhcpInterface, domain) {
+    return "interface " + dhcpInterface + " dhcp-server options domain-name " + domain;
 };
 module.exports.setDhcpServerEnable = function (dhcpInterface, dhcpEnable) {
     var enableCmd = "";

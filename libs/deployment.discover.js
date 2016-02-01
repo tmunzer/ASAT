@@ -16,7 +16,7 @@ module.exports.discover = function(discoverProcess, cidr, credentials, threads, 
 
     var deviceIp = block.first;
     asatConsole.info("Disovering network " + cidr);
-    discoverMessenger.emit("deployment discover start", discoverProcess, deviceCount);
+    discoverMessenger.emit("depl discover start", discoverProcess, deviceCount);
     for (var i = 0; i < threads; i ++){
         if (block.contains(deviceIp)) {
             runningProcess ++;
@@ -25,7 +25,7 @@ module.exports.discover = function(discoverProcess, cidr, credentials, threads, 
         }
     }
 
-    discoverMessenger.on("deployment discover nextIP", function(process){
+    discoverMessenger.on("depl discover nextIP", function(process){
         if (discoverProcess == process){
             runningProcess --;
             if (block.contains(deviceIp) && !stop && deviceIp != block.broadcast) {
@@ -33,10 +33,10 @@ module.exports.discover = function(discoverProcess, cidr, credentials, threads, 
                 discoverDevice(discoverProcess, deviceIp, credentials);
                 deviceIp = nextIP(deviceIp);
             } else if (runningProcess == 0){
-                discoverMessenger.emit("deployment discover end", process);
+                discoverMessenger.emit("depl discover end", process);
             }
         }
-    }).on('deployment discover stop', function(){
+    }).on('depl discover stop', function(){
         stop = true;
     })
 };
@@ -44,11 +44,11 @@ module.exports.discover = function(discoverProcess, cidr, credentials, threads, 
 function discoverDevice(discoverProcess, deviceIP, credentials){
     if (deviceIP){
         SSH.connectDevice(deviceIP, credentials, ["sh hw"], asatConsole, function(err, warn, data){
-            discoverMessenger.emit("deployment discover nextIP", discoverProcess);
+            discoverMessenger.emit("depl discover nextIP", discoverProcess);
             if (warn != false) {
-                var device = new Device(deviceIP, false, null, null, null, warn);
-                discoverMessenger.emit("deployment discover ip done", discoverProcess, device);
-            } else if (err != false) discoverMessenger.emit("deployment discover ip error", discoverProcess, deviceCount);
+                    var device = new Device(deviceIP, false, null, null, null, null, warn);
+                discoverMessenger.emit("depl discover ip done", discoverProcess, device);
+            } else if (err != false) discoverMessenger.emit("depl discover ip error", discoverProcess, deviceCount);
             else getInfo(discoverProcess, deviceIP, data);
         });
     }
@@ -56,15 +56,16 @@ function discoverDevice(discoverProcess, deviceIP, credentials){
 
 function getInfo(discoverProcess, deviceIP, data){
     var dataSplitted = data.split('\r\n');
-    var macAddress, serialNumber, productType;
+    var macAddress, serialNumber, productType, hostname;
     for (var i in dataSplitted){
+        if (dataSplitted[i].indexOf("#") >= 0) hostname = dataSplitted[i].split("#")[0].trim();
         if (dataSplitted[i].indexOf('Ethernet MAC address:') >= 0) macAddress = dataSplitted[i].split('Ethernet MAC address:')[1].trim();
         else if (dataSplitted[i].indexOf('Serial number:') >= 0) serialNumber = dataSplitted[i].split('Serial number:')[1].trim();
         else if (dataSplitted[i].indexOf('Product name:') >= 0) productType = dataSplitted[i].split('Product name:')[1].trim();
     }
-    var device = new Device(deviceIP, true, macAddress, serialNumber, productType, "");
+    var device = new Device(deviceIP, true, hostname, macAddress, serialNumber, productType, "");
     asatConsole.info('New ' + productType + ' found at ' + deviceIP + "(mac address: " + macAddress + ', serial number: ' + serialNumber + ")");
-    discoverMessenger.emit("deployment discover ip done", discoverProcess, device);
+    discoverMessenger.emit("depl discover ip done", discoverProcess, device);
 }
 
 

@@ -16,6 +16,8 @@
 <script>
     const EventEmitter = require('events').EventEmitter;
     var messenger = new EventEmitter();
+    var gui = require('nw.gui');
+
 </script>
 <body>
 <!-- ============================================ -->
@@ -57,7 +59,7 @@
                 </a>
             </li>
             <li>
-                <a href="#" onclick="main('deployment')" id="deployment-button" class="main-button">
+                <a href="#" onclick="main('depl')" id="depl-button" class="main-button">
                             <span class="fa-stack fa-lg">
                               <i class="fa fa-circle-thin fa-stack-2x"></i>
                               <i class="fa fa-cog fa-stack-1x "></i>
@@ -105,9 +107,8 @@
     <article>
         <h2>Aerohive Stand Alone Tool</h2>
         <p>This is a Free APP build to help Aerohive partners and customers. This APP is designed to provide helps
-            on site, to:</p>
-        <ul>
-            <li>Troubleshoot connection issues:
+            on site:</p>
+        <div class='ui-sec-tle'><h3>Troubleshoot connection issues</h3></div>
                 <ul>
                     <li>Aerohive Devices to HiveManager 6 Online servers</li>
                     <li>Aerohive Devices to IDManager services</li>
@@ -115,22 +116,22 @@
                     <li>Aerohive HiveManager 6 and HiveManager NG Onpremise to Aerohive License server</li>
                     <li>Aerohive HiveManager 6 to IDManager services</li>
                 </ul>
-            </li>
-            <li>Easily deploy new access points by providing an easy way to configure:
+
+            <div class='ui-sec-tle'><h3>Easily deploy new access points</h3></div>
                 <ul>
                     <li>Aerohive Devices' CAPWAP client</li>
                     <li>Aerohive Devices' IP Address</li>
                 </ul>
-            </li>
-            <li>Quickly configure an Aerohive Access Point in Site Survey mode:
+
+                <div class='ui-sec-tle'><h3>Quickly configure an Aerohive Access Point in Site Survey mode</h3></div>
                 <ul>
                     <li>Broadcasted SSID</li>
                     <li>Radio parameters</li>
                     <li>IP address parameters</li>
                     <li>IPERF parameters</li>
                 </ul>
-            </li>
-        </ul>
+
+
         </div>
     </article>
 </section>
@@ -173,9 +174,9 @@
 </section>
 <!-- ============================================ -->
 <!-- =================== DEPLOYMENT ============= -->
-<section class="main no-console" id="deployment" style="display: none">
+<section class="main no-console" id="depl" style="display: none">
     <article>
-        <table class="breadcrumb-table deployment">
+        <table class="breadcrumb-table depl">
             <tbody>
             <tr>
                 <td>
@@ -191,29 +192,35 @@
                     <span>Deploy</span>
                 </td>
             </tr>
-            <tr class="breadcrumb-row deployment">
+            <tr class="breadcrumb-row depl">
                 <td>
-                    <i class="fa fa-circle fa-lg deployment-button" id="deployment-find"></i>
+                    <i class="fa fa-circle fa-lg depl-button" id="depl-find"></i>
                 </td>
                 <td>
-                    <i class="fa fa-circle-o fa-lg deployment-button" id="deployment-common"></i>
+                    <i class="fa fa-circle-o fa-lg depl-button" id="depl-common"></i>
                 </td>
                 <td>
-                    <i class="fa fa-circle-o fa-lg deployment-button" id="deployment-network"></i>
+                    <i class="fa fa-circle-o fa-lg depl-button" id="depl-network"></i>
                 </td>
                 <td>
-                    <i class="fa fa-circle-o fa-lg deployment-button" id="deployment-deploy"></i>
+                    <i class="fa fa-circle-o fa-lg depl-button" id="depl-deploy"></i>
                 </td>
             </tr>
             </tbody>
         </table>
     </article>
-    <article id="deployment-window">
+    <article id="depl-window">
     </article>
-    <article id="deployment-action" class="action no-console">
+    <article id="depl-action" class="action no-console">
     </article>
 
 </section>
+<!-- ============================================ -->
+<!-- =================== SITE SURVEY ============ -->
+<section class="main no-console" id="survey" style="display: none">
+
+</section>
+
 <!-- ============================================ -->
 <!-- =================== LICENSE ================ -->
 <section class="main no-console" id="license" style="display: none">
@@ -237,6 +244,7 @@
 </footer>
 <script type="text/javascript" src='js/asat.console.js'></script>
 <script>
+    $("#current-release").html(gui.App.manifest.version);
     $("#console-button").click(function () {
         if ($("#console-footer").hasClass("console")) {
             $("#console").removeClass("console").addClass("no-console");
@@ -254,34 +262,8 @@
 <!-- ============================================ -->
 <!-- ================= JAVASCRIPT =============== -->
 <!-- ============================================ -->
+<script type="text/javascript" src='js/asat.dhcp.js'></script>
 
-<!-- ============================================ -->
-<!-- ==================== MAIN ================== -->
-<script>
-    function main(tab) {
-        $(".main").hide();
-        $(".main-button").removeClass("selected");
-        $('#' + tab).show();
-        $('#' + tab + "-button").addClass("selected");
-        switch (tab) {
-            case "firewall":
-                initFirewallTest();
-                break;
-            case "deployment":
-                initDeployment();
-                break;
-            case "license":
-                displayLicense();
-                break;
-            case "update":
-                displayUpdate();
-                break;
-        }
-    }
-    var asatConsole = new Console();
-    asatConsole.log("All systems are running.");
-
-</script>
 <!-- ============================================ -->
 <!-- ================= LICENSE ================== -->
 <script type="text/javascript" src='js/asat.license.js'></script>
@@ -299,8 +281,42 @@
 <script type="text/javascript" src='js/asat.firewall.js'></script>
 
 <!-- ============================================ -->
-<!-- ================= DEPLOYMENT ================= -->
+<!-- ================= DEPLOYMENT =============== -->
 <script type="text/javascript" src='js/asat.deployment.js'></script>
+
+<!-- ============================================ -->
+<!-- ================= DEPLOYMENT =============== -->
+<script type="text/javascript" src='js/asat.survey.js'></script>
+<!-- ============================================ -->
+<!-- ==================== MAIN ================== -->
+<script>
+    function main(tab) {
+        $(".main").hide();
+        $(".main-button").removeClass("selected");
+        $('#' + tab).show();
+        $('#' + tab + "-button").addClass("selected");
+        switch (tab) {
+            case "firewall":
+                initFirewallTest();
+                break;
+            case "depl":
+                initDeployment();
+                break;
+            case "survey":
+                initSurvey();
+                break;
+            case "license":
+                displayLicense();
+                break;
+            case "update":
+                displayUpdate();
+                break;
+        }
+    }
+    var asatConsole = new Console();
+    asatConsole.log("All systems are running.");
+
+</script>
 
 </body>
 </html>
