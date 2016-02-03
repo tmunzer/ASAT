@@ -39,7 +39,7 @@ module.exports.start = function (discoverProcess, deviceList, commonParam, dhcpP
 
 function configureDevice(discoverProcess, devNum, device, commonParam, dhcpParam, credentials) {
     if (device.selected) {
-        var ipAddress = device.ipAddress;
+        var ipAddress = device.current.ipAddress;
         var commands = generateCommands(device, devNum, commonParam, dhcpParam);
         asatConsole.debug(ipAddress + ': configuring device.');
         SSH.connectDevice(ipAddress, credentials, commands, asatConsole, function (err, warn, succ) {
@@ -58,10 +58,10 @@ function configureDevice(discoverProcess, devNum, device, commonParam, dhcpParam
                     asatConsole.info(ipAddress + ': configuration done. Rebooting device');
                     if (device.configuration.ipAddress != "") {
                         ipAddress = device.configuration.ipAddress;
-                        asatConsole.info(device.ipAddress + " is now at " + ipAddress);
+                        asatConsole.info(device.current.ipAddress + " is now at " + ipAddress);
                     }
                     SSH.connectDevice(ipAddress, credentials, ["reboot"], asatConsole, function (err, warn, succ) {
-                        asatConsole.info(device.ipAddress + ': reboot in progress');
+                        asatConsole.info(device.current.ipAddress + ': reboot in progress');
                         warning += warn;
                         if (!err && warning == "") succ = "Configuration and reboot done.";
                         discoverMessenger.emit("depl deploy nextDevice", discoverProcess);
@@ -108,13 +108,16 @@ function generateCommands(device, devNum, commonParam, dhcpParam) {
             }
         }
     }
-    if (device.configuration.ipAddress == "") commands.push(Commands.setIpAddress());
-    else {
+    if (device.current.dhcp) {
+        commands.push(Commands.setIpAddress());
+        commands.push(Commands.setDhcpClient(true));
+    } else {
+        commands.push(Commands.setDhcpClient(false));
         commands.push(Commands.setIpAddress(device.configuration.ipAddress, device.configuration.netmask));
         commands.push(Commands.setIpRoute(device.configuration.gateway));
     }
-    if (device.configuration.nativeVlan == "") commands.push(Commands.setNativeVlan(device.configuration.nativeVlan));
-    if (device.configuration.mgmtVlan == "") commands.push(Commands.setMgmtVlan(device.configuration.mgmtVlan));
+    if (device.current.nativeVlan != device.configuration.nativeVlan) commands.push(Commands.setNativeVlan(device.configuration.nativeVlan));
+    if (device.current.mgmtVlan != device.configuration.mgmtVlan) commands.push(Commands.setMgmtVlan(device.configuration.mgmtVlan));
     if (devNum == dhcpParam.deviceId && dhcpParam.enable){
         var dhcpInterface = "mgt0";
         if (!dhcpParam.mgt0) {
@@ -129,8 +132,7 @@ function generateCommands(device, devNum, commonParam, dhcpParam) {
         if (dhcpParam.options.domain != "") commands.push(Commands.setDhcpServerDomain(dhcpInterface, dhcpParam.options.domain));
         commands.push(Commands.setDhcpServerEnable(dhcpInterface, true));
     }
-    if (commonParam.save.enable) commands.push(Commands.reboot());
+    if (commonParam.save.enable) commands.push(Commands.saveConf());
     commands.push(Commands.closeTagDelay());
     return commands;
-
 }

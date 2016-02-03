@@ -200,7 +200,7 @@ function displayDevices() {
             htmlString += '<tr id="device-' + i + '" class="' + rowClass + ' isNotValid">';
         }
         htmlString +=
-            '<td>' + deviceList[i].ipAddress + '</td>' +
+            '<td>' + deviceList[i].configuration.ipAddress + '</td>' +
             '<td>' + deviceList[i].hostname + '</td>' +
             '<td>' + deviceList[i].deviceType + '</td>' +
             '<td>' + deviceList[i].serialNumber + '</td>' +
@@ -252,11 +252,11 @@ function nextButtonState(newState) {
     }
 }
 function sortIp(deviceA, deviceB) {
-    if (deviceA.ipAddress > deviceB.ipAddress) return 1;
-    else if (deviceA.ipAddress < deviceB.ipAddress) return -1;
+    if (deviceA.configuration.ipAddress > deviceB.configuration.ipAddress) return 1;
+    else if (deviceA.configuration.ipAddress < deviceB.configuration.ipAddress) return -1;
     else {
-        if (deviceA.ipAddress > deviceB.ipAddress) return 1;
-        else if (deviceA.ipAddress < deviceB.ipAddress) return -1;
+        if (deviceA.configuration.ipAddress > deviceB.configuration.ipAddress) return 1;
+        else if (deviceA.configuration.ipAddress < deviceB.configuration.ipAddress) return -1;
         else return 0;
     }
 }
@@ -264,7 +264,7 @@ function sortIp(deviceA, deviceB) {
 function newDevice(device) {
     var isNew = true;
     for (var i in deviceList) {
-        if (deviceList[i].ipAddress == device.ipAddress) {
+        if (deviceList[i].configuration.ipAddress == device.configuration.ipAddress) {
             deviceList[i] = device;
             isNew = false;
             break;
@@ -786,8 +786,6 @@ function resumeParam() {
 
 function displayNetworkParam() {
     var disabledByDhcp = "";
-    var disabledButtonByDhcp = "";
-    var columnDhcp = "";
     var device;
     // change the breadcrumb status
     $(".depl-button").removeClass("fa-circle").addClass("fa-circle-o");
@@ -811,25 +809,22 @@ function displayNetworkParam() {
         '</thead>' +
         '<tbody>';
     for (device in deviceList) {
+        disabledByDhcp = "";
         if (deviceList[device].selected) {
             if (dhcpParam.enable && dhcpParam.deviceId == device && dhcpParam.mgt0){
-                if ((deviceList[device].configuration.ipAddress) || (deviceList[device].configuration.netmask)){
-                    disabledByDhcp = "disabled = 'disabled";
-                    disabledButtonByDhcp = "disabled";
-                }
+                    disabledByDhcp = "disabled";
             }
 
-            else columnDhcp =
             htmlString +=
                 '<tr>' +
                 '<td>' + deviceList[device].serialNumber + '</td>' +
                 '<td>' + deviceList[device].macAddress + '</td>' +
-                '<td>' + deviceList[device].ipAddress + '</td>' +
-                '<td><i class="fa fa-square-o fa-lg" id="depl-dhcp-' + device + '" onclick="deplChangeDhcp(\'' + device + '\')"></td>' +
-                '<td><input class="asat-table-input" '+disabledByDhcp+' id="newNet-' + device + '" type="text" placeholder=""' +
+                '<td>' + deviceList[device].configuration.ipAddress + '</td>' +
+                '<td><i class="fa fa-square-o fa-lg '+disabledByDhcp+'" id="depl-dhcp-' + device + '" onclick="deplChangeDhcp(\'' + device + '\')"></td>' +
+                '<td><input class="asat-table-input '+disabledByDhcp+'" id="newNet-' + device + '" type="text" placeholder=""' +
                 'onkeypress="return networkKeyPress(event)" onchange="deplNewNet(\'' + device + '\')" size="18" ' +
-                'value="' + deviceList[device].configuration.ipAddress + '"></td>' +
-                '<td><input class="asat-table-input" '+disabledByDhcp+'  id="newGw-' + device + '" type="text" placeholder=""' +
+                'value="' + deviceList[device].cidr + '"></td>' +
+                '<td><input class="asat-table-input '+disabledByDhcp+'" id="newGw-' + device + '" type="text" placeholder=""' +
                 'onkeypress="return ipKeyPress(event)" onchange="deplNewGw(\'' + device + '\')" type="text" size="15" ' +
                 'value="' + deviceList[device].configuration.gateway + '"></td>' +
                 '<td><input class="asat-table-input" id="newNatVlan-' + device + '" ' +
@@ -848,33 +843,50 @@ function displayNetworkParam() {
     document.getElementById("depl-window").innerHTML = htmlString;
     document.getElementById("depl-action").innerHTML =
         '<button id="button-back" class="back btn btn-default" onclick="displayCommonParam()">Back</button>' +
-        '<button id="depl-button-next" class="next btn btn-default '+disabledButtonByDhcp+'" onclick="displaySendConfiguration()" >Next</button>';
+        '<button id="depl-button-next" class="next btn btn-default" onclick="displaySendConfiguration()" >Next</button>';
 
     for (device in deviceList) {
         if (deviceList[device].selected) {
-            if (dhcpParam.enable && dhcpParam.deviceId == device && dhcpParam.mgt0) qtipDeplInfo($('#newNet-' + device), 'newNet-' + device, "IP Address configured from DHCP");
+            if (dhcpParam.enable && dhcpParam.deviceId == device && dhcpParam.mgt0) {
+                qtipDeplInfo($('#newNet-' + device), 'newNet-' + device, "IP Address configured from DHCP Server configuration");
+                qtipDeplInfo($('#depl-dhcp-' + device), 'depl-dhcp-' + device, "DHCP Client disabled by DHCP Server configuration");
+
+            }
             else qtipDeplInfo($('#newNet-' + device), 'newNet-' + device, "IP Address/Mask. <br>Let blank for DHCP Client");
-            if (deviceList[device].current.dhcp != deviceList[device].configuration.dhcp) {
+            if (deviceList[device].configuration.dhcp != deviceList[device].configuration.dhcp) {
                 if (deviceList[device].configuration.dhcp) deplChangeDhcp(device);
-            } else if (deviceList[device].current.dhcp) deplChangeDhcp(device);
+            } else if (deviceList[device].configuration.dhcp) deplChangeDhcp(device);
         }
     }
+    deplSaveButton();
+}
+
+function deplSaveButton(){
+    var elemList = $(".isNotValid");
+    if (elemList.length == 0) $("#depl-button-next").prop('disabled', false);
+    else $("#depl-button-next").prop('disabled', true);
 }
 
 function deplChangeDhcp(devId){
     var elem = $("#depl-dhcp-"+devId);
-    if (elem.hasClass("enabled")) {
+    if (elem.hasClass('disabled')){
+            elem.addClass("fa-square-o").removeClass("fa-check-square-o");
+            $('#newNet-' + devId).prop("disabled", true).addClass("disabled").removeClass("isNotValid").addClass("isValid");
+            $('#newGw-' + devId).prop("disabled", true).addClass("disabled").removeClass("isNotValid").addClass("isValid");
+    }
+    else if (elem.hasClass("enabled")) {
         elem.removeClass("fa-check-square-o").removeClass("enabled").addClass("fa-square-o");
         $('#newNet-' + devId).prop("disabled", false).removeClass("disabled");
         $('#newGw-' + devId).prop("disabled", false).removeClass("disabled");
+        deplNewNet(devId);
     }
     else {
         elem.removeClass("fa-square-o").addClass("fa-check-square-o").addClass("enabled");
-        $('#newNet-' + devId).prop("disabled", true).addClass("disabled");
-        $('#newGw-' + devId).prop("disabled", true).addClass("disabled");
+        $('#newNet-' + devId).prop("disabled", true).addClass("disabled").removeClass("isNotValid").addClass("isValid");
+        $('#newGw-' + devId).prop("disabled", true).addClass("disabled").removeClass("isNotValid").addClass("isValid");
     }
     deviceList[devId].configuration.dhcp = elem.hasClass("enabled");
-    console.log(deviceList[devId]);
+    deplSaveButton();
 }
 
 function deplNewVlan(vlanType, devId) {
@@ -896,9 +908,9 @@ function deplNewVlan(vlanType, devId) {
         } else $("#depl-button-next").prop('disabled', false);
     } else {
         elem.addClass("isNotValid").removeClass("isValid");
-        $("#depl-button-next").prop('disabled', true);
         qtipDeplError(elem, vlanType + devId, "VLAN value should be between 1 and 4094.");
     }
+    deplSaveButton();
 }
 
 function deplNewNet(devId) {
@@ -917,23 +929,23 @@ function deplNewNet(devId) {
         }
     }
     if (network == "") {
-        elem.removeClass("isNotValid").addClass("isValid");
+        elem.removeClass("isValid").addClass("isNotValid");
         deviceList[devId].configuration.ipAddress = "";
         deviceList[devId].configuration.netmask = "";
-        qtipDeplInfo(elem, 'newNet-' + devId, "IP Address/Mask. \r\nLet blank for DHCP Client");
+        qtipDeplError(elem, 'newNet-' + devId, "IP Address/Mask can't be blank if DHCP Client is disabled.");
         deplGwInNet(devId);
     } else if (isValid) {
         var block = new Netmask(elem.val());
         deviceList[devId].configuration.ipAddress = ip;
         deviceList[devId].configuration.netmask = block.mask;
         elem.removeClass("isNotValid").addClass("isValid");
-        qtipDeplInfo(elem, 'newNet-' + devId, "IP Address/Mask. \r\nLet blank for DHCP Client");
+        qtipDeplInfo(elem, 'newNet-' + devId, "IP Address/Mask.");
         deplGwInNet(devId);
     } else {
         elem.addClass("isNotValid").removeClass("isValid");
-        qtipDeplError(elem, 'newNet-' + devId, "IP configuration is not valid. Should be \"IP Address/mask\".");
-        $("#depl-button-next").prop('disabled', true);
+        qtipDeplError(elem, 'newNet-' + devId, "IP configuration is not valid. Should be \"IP Address/mask\".<br>Example: 192.168.1.1/24");
     }
+    deplSaveButton();
 }
 
 function deplNewGw(devId) {
@@ -951,8 +963,8 @@ function deplNewGw(devId) {
     } else {
         elem.addClass("isNotValid").removeClass("isValid");
         qtipDeplError(elem, 'newGw-' + devId, "Invalid Gateway IP Address.");
-        $("#depl-button-next").prop('disabled', true);
     }
+    deplSaveButton();
 }
 
 function deplGwInNet(devId) {
@@ -991,10 +1003,7 @@ function deplGwInNet(devId) {
         var api = $('#qtip-newGw-' + devId).qtip('api');
         if (api) api.destroy(true);
     }
-    if ($(".isNotValid").length > 0) {
-        $("#depl-button-next").prop('disabled', true);
-    } else $("#depl-button-next").prop('disabled', false);
-
+    deplSaveButton();
 }
 
 function qtipDeplError(elem, qtipId, message) {
@@ -1062,15 +1071,12 @@ function displaySendConfiguration() {
         '<tr>' +
         '<th>Initial IP Address</th>' +
         '<th>Serial Number</th>' +
-        '<th>Region</th>' +
-        '<th>Country Code</th>' +
+        '<th>Radio Mode</th>' +
         '<th>DNS</th>' +
         '<th>NTP</th>' +
         '<th>CAPWAP</th>' +
-        '<th>CAPWAP Proxy</th>' +
         '<th>Network</th>' +
-        '<th>Native VLAN</th>' +
-        '<th>Mgmt VLAN</th>' +
+        '<th>VLAN</th>' +
         '<th>Save</th>' +
         '<th>Reboot</th>' +
         '<th>Status</th>' +
@@ -1081,34 +1087,29 @@ function displaySendConfiguration() {
         if (deviceList[device].selected) {
             htmlString +=
                 '<tr>' +
-                '<td>' + deviceList[device].ipAddress + '</td>' +
+                '<td>' + deviceList[device].configuration.ipAddress + '</td>' +
                 '<td>' + deviceList[device].serialNumber + '</td>';
-            if (commonParam.region.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
-            if (commonParam.country.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
+            if (commonParam.region.enable || commonParam.country.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
+            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: gray"></i></td>';
             if (commonParam.dns.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
+            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: gray"></i></td>';
             if (commonParam.ntp.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
+            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: gray"></i></td>';
             if (commonParam.capwap.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
-            if (commonParam.capwap.http.proxy.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
+            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: gray"></i></td>';
 
-            if (deviceList[device].configuration.ipAddress != "") htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
-            if (deviceList[device].configuration.nativeVlan != "") htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
-            if (deviceList[device].configuration.mgmtVlan != "") htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
+            if (deviceList[device].configuredIpAddress()) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
+            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: gray"></i></td>';
+            if (deviceList[device].configuredNativeVlan() || deviceList[device].configuredMgmtVlan()) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
+            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: gray"></i></td>';
+
 
             if (commonParam.save.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
+            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: gray"></i></td>';
             if (commonParam.reboot.enable) htmlString += '<td class="icon"><i class="fa fa-check-circle" style="color: green"></i></td>';
-            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: red"></i></td>';
+            else htmlString += '<td class="icon"><i class="fa fa-times-circle" style="color: gray"></i></td>';
             htmlString +=
-                '<td id="deploy-' + device + '" class="icon deploy-result"></td>' +
+                '<td id="depl-' + device + '" class="icon deploy-result"></td>' +
                 '</tr>';
         }
     }

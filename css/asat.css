@@ -336,9 +336,11 @@ i.fa.enabled>span {
 .asat-table>tbody>tr.selected,
 .asat-table>tbody>tr.selected:hover {
     background-color: #FFA500;
+    cursor: default;
 }
 .asat-table>tbody>tr:hover {
  background-color: white;
+    cursor: default;
 }
 .asat-table>tbody>tr>td>.asat-table-input.disabled,
 .asat-table>tbody>tr>td>.asat-table-input.disabled:focus

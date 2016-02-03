@@ -13,15 +13,20 @@ module.exports.discover = function(discoverProcess, cidr, credentials, threads, 
     asatConsole = myConsole;
     var runningProcess = 0;
     var stop = false;
+    var delay = 0;
 
     var deviceIp = block.first;
     asatConsole.info("Disovering network " + cidr);
     discoverMessenger.emit("depl discover start", discoverProcess, deviceCount);
     for (var i = 0; i < threads; i ++){
+        delay = 100 * i;
         if (block.contains(deviceIp)) {
-            runningProcess ++;
-            discoverDevice(discoverProcess, deviceIp, credentials);
-            deviceIp = nextIP(deviceIp);
+            setTimeout(function() {
+                runningProcess ++;
+                discoverDevice(discoverProcess, deviceIp, credentials);
+                deviceIp = nextIP(deviceIp);
+            }, delay);
+
         }
     }
 
