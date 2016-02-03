@@ -75,6 +75,20 @@ function validateIP(value) {
     return true;
 }
 
+// return
+// 1 if A > B
+// 0 if A == B
+// -1 if A < B
+function compareIP(valueA, valueB){
+    var valueASplitted = valueA.split(".");
+    var valueBSplitted = valueB.split(".");
+    for (var i = 0; i < 4; i ++){
+        if (parseInt(valueASplitted[i]) > parseInt(valueBSplitted[i])) return 1;
+        else if (parseInt(valueASplitted[i]) < parseInt(valueBSplitted[i])) return -1;
+    }
+    return 0;
+}
+
 function validateFQDN(value) {
     var fqdnRegExp = new RegExp("(?=^.{4,253}$)(^((?!-)[a-zA-Z0-9-]{0,62}[a-zA-Z0-9]\.)+[a-zA-Z]{2,63}$)");
     if (!(fqdnRegExp.test(value))) {
@@ -157,3 +171,22 @@ function displayQtip(fieldId, error, warning, success, info) {
         }
     })
 }
+
+
+function removeAllQtip(fieldClass){
+    var api;
+    $("#input."+fieldClass).each(function(){
+        api = $(this).qtip('api');
+        if (api) api.destroy();
+    })
+}
+
+function removeQtip(selector){
+    var api = $(selector).qtip('api');
+    if (api) api.destroy();
+}
+
+function hasQtip(selector){
+    return $(selector).qtip('api') != null;
+}
+

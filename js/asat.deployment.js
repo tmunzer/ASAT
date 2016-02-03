@@ -787,6 +787,8 @@ function resumeParam() {
 function displayNetworkParam() {
     var disabledByDhcp = "";
     var disabledButtonByDhcp = "";
+    var columnDhcp = "";
+    var device;
     // change the breadcrumb status
     $(".depl-button").removeClass("fa-circle").addClass("fa-circle-o");
     $("#depl-network").removeClass("fa-circle-o").addClass("fa-circle");
@@ -800,6 +802,7 @@ function displayNetworkParam() {
         '<th>Serial Number</th>' +
         '<th>MAC Address</th>' +
         '<th>Current IP Address</th>' +
+        '<th>DHCP Client</th>' +
         '<th>New IP Address</th>' +
         '<th>Gateway</th>' +
         '<th>Native VLAN</th>' +
@@ -807,23 +810,26 @@ function displayNetworkParam() {
         '</tr>' +
         '</thead>' +
         '<tbody>';
-    for (var device in deviceList) {
+    for (device in deviceList) {
         if (deviceList[device].selected) {
-            if (dhcpParam.enable && dhcpParam.deviceId == device){
+            if (dhcpParam.enable && dhcpParam.deviceId == device && dhcpParam.mgt0){
                 if ((deviceList[device].configuration.ipAddress) || (deviceList[device].configuration.netmask)){
                     disabledByDhcp = "disabled = 'disabled";
                     disabledButtonByDhcp = "disabled";
                 }
             }
+
+            else columnDhcp =
             htmlString +=
                 '<tr>' +
                 '<td>' + deviceList[device].serialNumber + '</td>' +
                 '<td>' + deviceList[device].macAddress + '</td>' +
                 '<td>' + deviceList[device].ipAddress + '</td>' +
-                '<td><input class="asat-table-input" '+disabledByDhcp+' id="newNet-' + device + '" type="text" placeholder="DHCP client"' +
+                '<td><i class="fa fa-square-o fa-lg" id="depl-dhcp-' + device + '" onclick="deplChangeDhcp(\'' + device + '\')"></td>' +
+                '<td><input class="asat-table-input" '+disabledByDhcp+' id="newNet-' + device + '" type="text" placeholder=""' +
                 'onkeypress="return networkKeyPress(event)" onchange="deplNewNet(\'' + device + '\')" size="18" ' +
                 'value="' + deviceList[device].configuration.ipAddress + '"></td>' +
-                '<td><input class="asat-table-input" id="newGw-' + device + '" type="text" placeholder="DHCP client"' +
+                '<td><input class="asat-table-input" '+disabledByDhcp+'  id="newGw-' + device + '" type="text" placeholder=""' +
                 'onkeypress="return ipKeyPress(event)" onchange="deplNewGw(\'' + device + '\')" type="text" size="15" ' +
                 'value="' + deviceList[device].configuration.gateway + '"></td>' +
                 '<td><input class="asat-table-input" id="newNatVlan-' + device + '" ' +
@@ -844,11 +850,31 @@ function displayNetworkParam() {
         '<button id="button-back" class="back btn btn-default" onclick="displayCommonParam()">Back</button>' +
         '<button id="depl-button-next" class="next btn btn-default '+disabledButtonByDhcp+'" onclick="displaySendConfiguration()" >Next</button>';
 
-    for (var device in deviceList) {
+    for (device in deviceList) {
         if (deviceList[device].selected) {
-            qtipDeplInfo($('#newNet-' + device), 'newNet-' + device, "IP Address/Mask. <br>Let blank for DHCP Client");
+            if (dhcpParam.enable && dhcpParam.deviceId == device && dhcpParam.mgt0) qtipDeplInfo($('#newNet-' + device), 'newNet-' + device, "IP Address configured from DHCP");
+            else qtipDeplInfo($('#newNet-' + device), 'newNet-' + device, "IP Address/Mask. <br>Let blank for DHCP Client");
+            if (deviceList[device].current.dhcp != deviceList[device].configuration.dhcp) {
+                if (deviceList[device].configuration.dhcp) deplChangeDhcp(device);
+            } else if (deviceList[device].current.dhcp) deplChangeDhcp(device);
         }
     }
+}
+
+function deplChangeDhcp(devId){
+    var elem = $("#depl-dhcp-"+devId);
+    if (elem.hasClass("enabled")) {
+        elem.removeClass("fa-check-square-o").removeClass("enabled").addClass("fa-square-o");
+        $('#newNet-' + devId).prop("disabled", false).removeClass("disabled");
+        $('#newGw-' + devId).prop("disabled", false).removeClass("disabled");
+    }
+    else {
+        elem.removeClass("fa-square-o").addClass("fa-check-square-o").addClass("enabled");
+        $('#newNet-' + devId).prop("disabled", true).addClass("disabled");
+        $('#newGw-' + devId).prop("disabled", true).addClass("disabled");
+    }
+    deviceList[devId].configuration.dhcp = elem.hasClass("enabled");
+    console.log(deviceList[devId]);
 }
 
 function deplNewVlan(vlanType, devId) {

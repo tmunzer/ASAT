@@ -1,6 +1,7 @@
 var dhcpParam = {
     enable: false,
     deviceId: null,
+    deviceSerial: "",
     mgt0: true,
     vlanID: 0,
     ipAddress: "",
@@ -22,271 +23,530 @@ var dhcpParam = {
 
 
 function checkBlock(prefix) {
-    var gwDeviceElem = $("#" + prefix + "-gwDevice");
-    var poolStartElem = $("#" + prefix + "-poolStart");
-    var poolEndElem = $("#" + prefix + "-poolEnd");
-
-    if (dhcpParam.ipAddress != "" && dhcpParam.netmask != "") {
-        var block = new Netmask(dhcpParam.ipAddress + "/" + dhcpParam.netmask);
-        if (block) {
-            if (dhcpParam.mgt0 && (dhcpParam.gateway != "" && !block.contains(dhcpParam.gateway))) {
-                gwDeviceElem.addClass('isNotValid').removeClass('isValid');
-                displayQtip(prefix + "-gwDevice", "Gateway IP Address does not belong to the DHCP server subnet.", null, null, null);
-            }
-            if (dhcpParam.poolStart != "" && !block.contains(dhcpParam.poolStart) || (dhcpParam.poolEnd != "" && !block.contains(dhcpParam.poolEnd))) {
-                poolStartElem.addClass('isNotValid').removeClass('isValid');
-                displayQtip(prefix + "-poolStart", "DHCP IP Pool does not belong to the DHCP server subnet.", null, null, null);
-            }
-            if (dhcpParam.options.gateway != "" && !block.contains(dhcpParam.options.gateway)) {
-                poolEndElem.addClass('isNotValid').removeClass('isValid');
-                displayQtip(prefix + "-poolStart", "Gateway IP Address does not belong to the DHCP server subnet.", null, null, null);
-            }
-            dhcpParam.bitmask = block.bitmask;
-
-
-        }
-    }
-}
-
-function checkDhcpInput(prefix) {
-    var isValid = true;
-
     var ipDeviceElem = $("#" + prefix + "-ipDevice");
     var netmaskElem = $("#" + prefix + "-netmask");
     var gwDeviceElem = $("#" + prefix + "-gwDevice");
     var poolStartElem = $("#" + prefix + "-poolStart");
     var poolEndElem = $("#" + prefix + "-poolEnd");
+    var gwDhcpElem = $("#" + prefix + '-gwDhcp');
+
+    removeQtip("#" + prefix + "-gwDevice");
+    removeQtip("#" + prefix + "-poolStart");
+    removeQtip("#" + prefix + "-poolEnd");
+
+    if (ipDeviceElem.hasClass("isValid") && netmaskElem.hasClass("isValid")) {
+        var block = new Netmask(ipDeviceElem.val() + "/" + netmaskElem.val());
+        if (block) {
+            if ((dhcpParam.mgt0) && (gwDeviceElem.val() != "" && !block.contains(gwDeviceElem.val()))){
+                    gwDeviceElem.addClass('isNotValid').removeClass('isValid');
+                    displayQtip(prefix + "-gwDevice", "Gateway IP Address does not belong to the DHCP server subnet.", null, null, null);
+                    return false;
+            } else if (poolStartElem.val() != "" && !block.contains(poolStartElem.val()) || (poolEndElem.val() != "" && !block.contains(poolEndElem.val()))) {
+                poolStartElem.addClass('isNotValid').removeClass('isValid');
+                displayQtip(prefix + "-poolStart", "DHCP IP Pool does not belong to the DHCP server subnet.", null, null, null);
+                return false;
+            } else if (gwDhcpElem.val() != "" && !block.contains(gwDhcpElem.val())) {
+                poolEndElem.addClass('isNotValid').removeClass('isValid');
+                displayQtip(prefix + "-poolStart", "Gateway IP Address does not belong to the DHCP server subnet.", null, null, null);
+                return false;
+            } else {
+                gwDeviceElem.removeClass('isNotValid').addClass('isValid');
+                poolStartElem.removeClass('isNotValid').addClass('isValid');
+                poolEndElem.removeClass('isNotValid').addClass('isValid');
+                dhcpParam.bitmask = block.bitmask;
+                return true;
+            }
+
+        }
+    }
+    return true;
+}
+
+function checkVlan(prefix) {
+    var vlanElem = $("#" + prefix + "-vlanID");
+    removeQtip("#" + prefix + "-vlan");
+
+    if (vlanElem.val() >= 0 && vlanElem.val() <= 4095) {
+        vlanElem.addClass("isValid").removeClass("isNotValid");
+        dhcpParam.vlanID = vlanElem.val();
+        saveButtonState(prefix);
+    } else if (vlanElem.val() == deviceList[dhcpParam.deviceId].mgmtVlan){
+        vlanElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-vlanID", "DHCP VLAN ID can't be equal to Device MGT0 VLAN ID.", null, null, null);
+    } else if (vlanElem.val() == "") {
+        vlanElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-vlanID", "DHCP VLAN ID is required.", null, null, null);
+    } else {
+        vlanElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-vlanID", "DHCP VLAN ID is not valid.", null, null, null);
+    }
+}
+
+function checkIpDevice(prefix) {
+    var ipDeviceElem = $("#" + prefix + "-ipDevice");
+    removeQtip("#" + prefix + "-ipDevice");
+
+
+    if (validateIP(ipDeviceElem.val())) {
+        ipDeviceElem.addClass("isValid").removeClass("isNotValid");
+        if (compareIpDeviceToGwDevice(prefix)
+            && compareIpDeviceToGwDhcp(prefix)
+            && compareIpDeviceToPool(prefix)
+            && compareIpDeviceToDns(prefix)
+            && compareIpDeviceToNtp(prefix)
+            && checkBlock(prefix)) {
+            dhcpParam.ipAddress = ipDeviceElem.val();
+            saveButtonState(prefix);
+        }
+    } else if (ipDeviceElem.val() == "") {
+        ipDeviceElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-ipDevice", "DHCP Server IP Address is required.", null, null, null);
+    } else {
+        ipDeviceElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-ipDevice", "DHCP Server IP Address is not valid.", null, null, null);
+    }
+}
+
+function checkNetmask(prefix) {
+    var netmaskElem = $("#" + prefix + "-netmask");
+    removeQtip("#" + prefix + "-netmask");
+
+
+    if (validateIP(netmaskElem.val())) {
+        netmaskElem.addClass("isValid").removeClass("isNotValid");
+        if (checkBlock(prefix)) {
+            dhcpParam.netmask = netmaskElem.val();
+            saveButtonState(prefix);
+        }
+    } else if (netmaskElem.val() == "") {
+        netmaskElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-netmask", "Netmask is required.", null, null, null);
+    } else {
+        netmaskElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-netmask", "Netmask is not valid.", null, null, null);
+    }
+}
+
+function checkGwDevice(prefix) {
+    var gwDeviceElem = $("#" + prefix + "-gwDevice");
+    removeQtip("#" + prefix + "-gwDevice");
+
+
+    if (dhcpParam.mgt0 && (validateIP(gwDeviceElem.val()) || gwDeviceElem.val() == "")) {
+        gwDeviceElem.addClass("isValid").removeClass("isNotValid");
+        if (compareIpDeviceToGwDevice(prefix)
+        && compareGwDeviceToPool(prefix)
+        && checkBlock(prefix)) {
+            dhcpParam.gateway = gwDeviceElem.val();
+            saveButtonState(prefix);
+        }
+        } else if (gwDeviceElem.val() == "") {
+        gwDeviceElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is required.", null, null, null);
+    } else {
+        gwDeviceElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is not valid.", null, null, null);
+    }
+}
+
+function checkPoolStart(prefix) {
+    var poolStartElem = $("#" + prefix + "-poolStart");
+    removeQtip("#" + prefix + "-poolStart");
+
+
+    if (validateIP(poolStartElem.val())) {
+        poolStartElem.addClass("isValid").removeClass("isNotValid");
+        if (compareIpDeviceToPool(prefix)
+        && compareGwDeviceToPool(prefix)
+        && compareDnsToPool(prefix)
+        && compareGwDhcpToPool(prefix)
+        && compareNtpToPool(prefix)
+        && checkBlock(prefix)
+        && comparePool(prefix)) {
+            dhcpParam.poolStart = poolStartElem.val();
+            saveButtonState(prefix);
+        }
+        } else if (poolStartElem.val() == "") {
+        poolStartElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is required.", null, null, null);
+    } else {
+        poolStartElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is not valid.", null, null, null);
+    }
+}
+
+function checkPoolEnd(prefix) {
+    var poolEndElem = $("#" + prefix + "-poolEnd");
+    removeQtip("#" + prefix + "-poolEnd");
+
+
+    if (validateIP(poolEndElem.val())) {
+        poolEndElem.addClass("isValid").removeClass("isNotValid");
+        if (compareIpDeviceToPool(prefix)
+        && compareGwDeviceToPool(prefix)
+        && compareDnsToPool(prefix)
+        && compareGwDhcpToPool(prefix)
+        && compareNtpToPool(prefix)
+        && checkBlock(prefix)
+        && comparePool(prefix)) {
+            dhcpParam.poolEnd = poolEndElem.val();
+            saveButtonState(prefix);
+        }
+    } else if (poolEndElem.val() == "") {
+        poolEndElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is required.", null, null, null);
+    } else {
+        poolEndElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is not valid.", null, null, null);
+    }
+}
+
+function checkGwDhcp(prefix) {
     var gwDhcpElem = $("#" + prefix + "-gwDhcp");
+    removeQtip("#" + prefix + "-gwDhcp");
+
+
+    if (validateIP(gwDhcpElem.val()) || ntpElem.val() == "") {
+        gwDhcpElem.addClass("isValid").removeClass("isNotValid");
+        if (compareIpDeviceToGwDhcp(prefix)
+        && compareGwDhcpToPool(prefix)) {
+            dhcpParam.options.gateway = gwDhcpElem.val();
+            saveButtonState(prefix);
+        }
+    } else {
+        gwDhcpElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is not valid.", null, null, null);
+    }
+}
+
+function checkDns(prefix) {
     var dnsElem = $("#" + prefix + "-dns");
+    removeQtip("#" + prefix + "-dns");
+
+
+    if (validateIP(dnsElem.val()) || ntpElem.val() == "") {
+        dnsElem.addClass("isValid").removeClass("isNotValid");
+        if (compareIpDeviceToDns(prefix)
+        && compareDnsToPool(prefix)) {
+            dhcpParam.options.dns = dnsElem.val();
+            saveButtonState(prefix);
+        }
+    } else {
+        dnsElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is not valid.", null, null, null);
+    }
+}
+
+function checkNtp(prefix) {
     var ntpElem = $("#" + prefix + "-ntp");
+    removeQtip("#" + prefix + "-ntp");
 
-    if (ipDeviceElem.hasClass("isValid")
-        && netmaskElem.hasClass("isValid")
-        && (!dhcpParam.mgt0 || gwDeviceElem.hasClass("isValid"))
-        && poolStartElem.hasClass("isValid")
-        && poolEndElem.hasClass("isValid")
-    ) {
 
-        if (dhcpParam.mgt0 && (ipDeviceElem.val() == gwDeviceElem.val())) {
-            ipDeviceElem.removeClass("isValid").addClass("isNotValid");
-            gwDeviceElem.removeClass("isValid").addClass("isNotValid");
-            displayQtip(prefix + "-ipDevice", "Device IP Address and Gateway IP Address can't be the same.", null, null, null);
-            displayQtip(prefix + "-gwDevice", "Device IP Address and Gateway IP Address can't be the same.", null, null, null);
-            isValid = false;
-        } else {
-            ipDeviceElem.addClass("isValid").removeClass("isNotValid");
-            gwDeviceElem.addClass("isValid").removeClass("isNotValid");
+    if (validateIP(ntpElem.val()) || validateFQDN(ntpElem.val()) || ntpElem.val() == "") {
+        ntpElem.addClass("isValid").removeClass("isNotValid");
+        if (compareIpDeviceToNtp(prefix)
+        && compareNtpToPool(prefix)) {
+            dhcpParam.options.ntp = ntpElem.val();
+            saveButtonState(prefix);
         }
+    } else {
+        ntpElem.addClass('isNotValid').removeClass('isValid');
+        displayQtip(prefix + "-gwDevice", "DHCP Server Gateway is not valid.", null, null, null);
+    }
+}
 
-        if (isValid && ipDeviceElem.val() >= poolStartElem.val() && ipDeviceElem.val() <= poolEndElem.val()) {
-            ipDeviceElem.removeClass("isValid").addClass("isNotValid");
-            poolStartElem.removeClass("isValid").addClass("isNotValid");
-            poolEndElem.removeClass("isValid").addClass("isNotValid");
-            displayQtip(prefix + "-ipDevice", "DHCP server IP Address can't be included into DHCP Pool.", null, null, null);
-            displayQtip(prefix + "-poolStart", "DHCP server IP Address can't be included into DHCP Pool.", null, null, null);
-            displayQtip(prefix + "-poolEnd", "DHCP server IP Address can't be included into DHCP Pool.", null, null, null);
-            isValid = false;
-        } else {
-            ipDeviceElem.addClass("isValid").removeClass("isNotValid");
-            poolStartElem.addClass("isValid").removeClass("isNotValid");
-            poolEndElem.addClass("isValid").removeClass("isNotValid");
-        }
+function checkDomain(prefix) {
+    var domainElem = $("#" + prefix + "-domain");
+    removeQtip("#" + prefix + "-domain");
 
-        if (isValid && dhcpParam.mgt0 && (gwDeviceElem.val() >= poolStartElem.val() && gwDeviceElem.val() <= poolEndElem.val())) {
-            gwDeviceElem.removeClass("isValid").addClass("isNotValid");
-            poolStartElem.removeClass("isValid").addClass("isNotValid");
-            poolEndElem.removeClass("isValid").addClass("isNotValid");
-            displayQtip(prefix + "-ipDevice", "Gateway IP can't be included into DHCP Pool.", null, null, null);
-            displayQtip(prefix + "-poolStart", "Gateway IP can't be included into DHCP Pool.", null, null, null);
-            displayQtip(prefix + "-poolEnd", "Gateway IP can't be included into DHCP Pool.", null, null, null);
-            isValid = false;
-        } else {
-            gwDeviceElem.addClass("isValid").removeClass("isNotValid");
-            poolStartElem.addClass("isValid").removeClass("isNotValid");
-            poolEndElem.addClass("isValid").removeClass("isNotValid");
-        }
 
-        if (isValid && poolStartElem.val() >= poolEndElem.val()) {
+    if (validateFQDN(domainElem.val()) || domainElem.val() == "") {
+        domainElem.addClass("isValid").removeClass("isNotValid");
+        dhcpParam.options.domain = domainElem.val();
+        saveButtonState(prefix);
+    } else {
+        domainElem.addClass("isValid").removeClass("isNotValid");
+        displayQtip(prefix + "-gwDevice", "Domain value is not valid.", null, null, null);
+    }
+}
+
+function comparePool(prefix) {
+    var poolStartElem = $("#" + prefix + "-poolStart");
+    var poolEndElem = $("#" + prefix + "-poolEnd");
+    removeQtip("#" + prefix + "-poolStart");
+    removeQtip("#" + prefix + "-poolEnd");
+    if (poolStartElem.val() != "" && poolEndElem.val() != "") {
+        if (compareIP(poolStartElem.val(), poolEndElem.val()) != -1) {
             poolStartElem.removeClass("isValid").addClass("isNotValid");
             poolEndElem.removeClass("isValid").addClass("isNotValid");
             displayQtip(prefix + "-poolStart", "DHCP Pool is not valid. Please change IP Start or IP End.", null, null, null);
             displayQtip(prefix + "-poolEnd", "DHCP Pool is not valid. Please change IP Start or IP End.", null, null, null);
-            isValid = false;
+            return false;
         } else {
             poolStartElem.addClass("isValid").removeClass("isNotValid");
             poolEndElem.addClass("isValid").removeClass("isNotValid");
-        }
-
-
-        if (gwDhcpElem.val() != '') {
-            if (isValid && gwDhcpElem.val() == ipDeviceElem.val()) {
-                ipDeviceElem.removeClass("isValid").addClass("isNotValid");
-                gwDhcpElem.removeClass("isValid").addClass("isNotValid");
-                displayQtip(prefix + "-ipDevice", "Device IP Address and Gateway IP Address can't be the same.", null, null, null);
-                displayQtip(prefix + "-gwDhcp", "Device IP Address and Gateway IP Address can't be the same.", null, null, null);
-                isValid = false;
-            } else {
-                ipDeviceElem.addClass("isValid").removeClass("isNotValid");
-                gwDhcpElem.addClass("isValid").removeClass("isNotValid");
-            }
-
-            if (isValid && gwDhcpElem.val() >= poolStartElem.val() && gwDhcpElem.val() <= poolEndElem.val()) {
-                gwDhcpElem.removeClass("isValid").addClass("isNotValid");
-                poolStartElem.removeClass("isValid").addClass("isNotValid");
-                poolEndElem.removeClass("isValid").addClass("isNotValid");
-                displayQtip(prefix + "-gwDhcp", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
-                displayQtip(prefix + "-poolStart", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
-                displayQtip(prefix + "-poolEnd", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
-                isValid = false;
-            } else {
-                gwDeviceElem.addClass("isValid").removeClass("isNotValid");
-                poolStartElem.addClass("isValid").removeClass("isNotValid");
-                poolEndElem.addClass("isValid").removeClass("isNotValid");
-            }
-        }
-
-
-        if (isValid && dnsElem.val() != '') {
-            if (dnsElem.val() == ipDeviceElem.val()) {
-                dnsElem.removeClass("isValid").addClass("isNotValid");
-                ipDeviceElem.removeClass("isValid").addClass("isNotValid");
-                displayQtip(prefix + "-ipDevice", "Device IP Address and DNS IP Address can't be the same.", null, null, null);
-                displayQtip(prefix + "-dns", "Device IP Address and DNS IP Address can't be the same.", null, null, null);
-                isValid = false;
-            } else {
-                ipDeviceElem.addClass("isValid").removeClass("isNotValid");
-                dnsElem.addClass("isValid").removeClass("isNotValid");
-            }
-
-            if (isValid && dnsElem.val() >= poolStartElem.val() && dnsElem.val() <= poolEndElem.val()) {
-                dnsElem.removeClass("isValid").addClass("isNotValid");
-                poolStartElem.removeClass("isValid").addClass("isNotValid");
-                poolEndElem.removeClass("isValid").addClass("isNotValid");
-                displayQtip(prefix + "-dns", "DNS IP Address can't be included into DHCP Pool.", null, null, null);
-                displayQtip(prefix + "-poolStart", "DNS IP Address can't be included into DHCP Pool.", null, null, null);
-                displayQtip(prefix + "-poolEnd", "DNS IP Address can't be included into DHCP Pool.", null, null, null);
-                isValid = false;
-            } else {
-                dnsElem.addClass("isValid").removeClass("isNotValid");
-                poolStartElem.addClass("isValid").removeClass("isNotValid");
-                poolEndElem.addClass("isValid").removeClass("isNotValid");
-            }
-        }
-
-
-        if (ntpElem.val() != '') {
-            if (isValid && ntpElem.val() == ipDeviceElem.val()) {
-                ntpElem.removeClass("isValid").addClass("isNotValid");
-                ipDeviceElem.removeClass("isValid").addClass("isNotValid");
-                displayQtip(prefix + "-ipDevice", "Device IP Address and NTP IP Address/Hostname can't be the same.", null, null, null);
-                displayQtip(prefix + "-ntp", "Device IP Address and NTP IP Address/Hostname can't be the same.", null, null, null);
-                isValid = false;
-            } else {
-                ipDeviceElem.addClass("isValid").removeClass("isNotValid");
-                ntpElem.addClass("isValid").removeClass("isNotValid");
-            }
-
-            if (isValid && ntpElem.val() >= poolStartElem.val() && ntpElem.val() <= poolEndElem.val()) {
-                ntpElem.removeClass("isValid").addClass("isNotValid");
-                poolStartElem.removeClass("isValid").addClass("isNotValid");
-                poolEndElem.removeClass("isValid").addClass("isNotValid");
-                displayQtip(prefix + "-nt", "NTP IP Address/Hostname can't be included into DHCP Pool.", null, null, null);
-                displayQtip(prefix + "-poolStart", "NTP IP Address/Hostname can't be included into DHCP Pool.", null, null, null);
-                displayQtip(prefix + "-poolEnd", "NTP IP Address/Hostname can't be included into DHCP Pool.", null, null, null);
-                isValid = false;
-            } else {
-                ntpElem.addClass("isValid").removeClass("isNotValid");
-                poolStartElem.addClass("isValid").removeClass("isNotValid");
-                poolEndElem.addClass("isValid").removeClass("isNotValid");
-            }
+            return true;
         }
     }
+    return true;
+}
+
+function compareIpDeviceToGwDhcp(prefix) {
+    var ipDeviceElem = $("#" + prefix + "-ipDevice");
+    var gwDhcpElem = $("#" + prefix + "-gwDhcp");
+    removeQtip("#" + prefix + "-ipDevice");
+    removeQtip("#" + prefix + "-gwDhcp");
+    if (ipDeviceElem.val() != "" && gwDhcpElem.val() != "") {
+        if (gwDhcpElem.val() == ipDeviceElem.val()) {
+            ipDeviceElem.removeClass("isValid").addClass("isNotValid");
+            gwDhcpElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-ipDevice", "Device IP Address and Gateway IP Address can't be the same.", null, null, null);
+            displayQtip(prefix + "-gwDhcp", "Device IP Address and Gateway IP Address can't be the same.", null, null, null);
+            return false;
+        } else {
+            ipDeviceElem.addClass("isValid").removeClass("isNotValid");
+            gwDhcpElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
+}
+
+function compareIpDeviceToGwDevice(prefix) {
+    var ipDeviceElem = $("#" + prefix + "-ipDevice");
+    var gwDeviceElem = $("#" + prefix + "-gwDevice");
+    removeQtip("#" + prefix + "-ipDevice");
+    removeQtip("#" + prefix + "-gwDevice");
+    if (ipDeviceElem.val() != "" && gwDeviceElem.val() != "") {
+        if (ipDeviceElem.val() == gwDeviceElem.val()) {
+            ipDeviceElem.removeClass("isValid").addClass("isNotValid");
+            gwDeviceElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-ipDevice", "Device IP Address and Gateway IP Address can't be the same.", null, null, null);
+            displayQtip(prefix + "-gwDevice", "Device IP Address and Gateway IP Address can't be the same.", null, null, null);
+            return false;
+        } else {
+            ipDeviceElem.addClass("isValid").removeClass("isNotValid");
+            gwDeviceElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
+}
+
+function compareIpDeviceToPool(prefix) {
+    var ipDeviceElem = $("#" + prefix + "-ipDevice");
+    var poolStartElem = $("#" + prefix + "-poolStart");
+    var poolEndElem = $("#" + prefix + "-poolEnd");
+    removeQtip("#" + prefix + "-ipDevice");
+    removeQtip("#" + prefix + "-poolStart");
+    removeQtip("#" + prefix + "-poolEnd");
+    if (ipDeviceElem.val() != "" && poolStartElem.val() != "" && poolEndElem.val() != "") {
+        if (compareIP(ipDeviceElem.val(), poolStartElem.val()) != -1 && compareIP(ipDeviceElem.val(), poolEndElem.val()) != 1) {
+            ipDeviceElem.removeClass("isValid").addClass("isNotValid");
+            poolStartElem.removeClass("isValid").addClass("isNotValid");
+            poolEndElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-ipDevice", "DHCP Server IP Address can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolStart", "DHCP Server IP Address can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolEnd", "DHCP Server IP Address can't be included into DHCP Pool.", null, null, null);
+            return false;
+        } else {
+            ipDeviceElem.addClass("isValid").removeClass("isNotValid");
+            poolStartElem.addClass("isValid").removeClass("isNotValid");
+            poolEndElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
+}
+
+function compareGwDeviceToPool(prefix) {
+    var gwDeviceElem = $("#" + prefix + "-gwDevice");
+    var poolStartElem = $("#" + prefix + "-poolStart");
+    var poolEndElem = $("#" + prefix + "-poolEnd");
+    removeQtip("#" + prefix + "-gwDevice");
+    removeQtip("#" + prefix + "-poolStart");
+    removeQtip("#" + prefix + "-poolEnd");
+    if (gwDeviceElem.val() != "" && poolStartElem.val() != "" && poolEndElem.val() != "") {
+        if (compareIP(gwDeviceElem.val(), poolStartElem.val()) != -1 && compareIP(gwDeviceElem.val(), poolEndElem.val()) != 1) {
+            gwDeviceElem.removeClass("isValid").addClass("isNotValid");
+            poolStartElem.removeClass("isValid").addClass("isNotValid");
+            poolEndElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-gwDevice", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolStart", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolEnd", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
+            return false;
+        } else {
+            gwDeviceElem.addClass("isValid").removeClass("isNotValid");
+            poolStartElem.addClass("isValid").removeClass("isNotValid");
+            poolEndElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
 }
 
 
 
-function dhcpInputChange(prefix, elem, value) {
-    var deviceElem = $("#" + prefix + "-dropdown-device");
+function compareGwDhcpToPool(prefix) {
+    var gwDhcpElem = $("#" + prefix + "-gwDhcp");
+    var poolStartElem = $("#" + prefix + "-poolStart");
+    var poolEndElem = $("#" + prefix + "-poolEnd");
+    removeQtip("#" + prefix + "-gwDhcp");
+    removeQtip("#" + prefix + "-poolStart");
+    removeQtip("#" + prefix + "-poolEnd");
+    if (gwDhcpElem.val() != "" && poolStartElem.val() != "" && poolEndElem.val() != "") {
+        if (compareIP(gwDhcpElem.val(), poolStartElem.val()) != -1 && compareIP(gwDhcpElem.val(), poolEndElem.val()) != 1) {
+            gwDhcpElem.removeClass("isValid").addClass("isNotValid");
+            poolStartElem.removeClass("isValid").addClass("isNotValid");
+            poolEndElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-gwDhcp", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolStart", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolEnd", "Gateway IP Address can't be included into DHCP Pool.", null, null, null);
+            return false;
+        } else {
+            gwDhcpElem.addClass("isValid").removeClass("isNotValid");
+            poolStartElem.addClass("isValid").removeClass("isNotValid");
+            poolEndElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
+}
+
+function compareIpDeviceToDns(prefix) {
+    var ipDeviceElem = $("#" + prefix + "-ipDevice");
+    var dnsElem = $("#" + prefix + "-dns");
+    removeQtip("#" + prefix + "-ipDevice");
+    removeQtip("#" + prefix + "-dns");
+    if (ipDeviceElem.val() != "" && dnsElem.val() != "") {
+        if (dnsElem.val() == ipDeviceElem.val()) {
+            dnsElem.removeClass("isValid").addClass("isNotValid");
+            ipDeviceElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-ipDevice", "Device IP Address and DNS IP Address can't be the same.", null, null, null);
+            displayQtip(prefix + "-dns", "Device IP Address and DNS IP Address can't be the same.", null, null, null);
+            return false;
+        } else {
+            ipDeviceElem.addClass("isValid").removeClass("isNotValid");
+            dnsElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
+}
+
+function compareDnsToPool(prefix) {
+    var dnsElem = $("#" + prefix + "-dns");
+    var poolStartElem = $("#" + prefix + "-poolStart");
+    var poolEndElem = $("#" + prefix + "-poolEnd");
+    removeQtip("#" + prefix + "-dns");
+    removeQtip("#" + prefix + "-poolStart");
+    removeQtip("#" + prefix + "-poolEnd");
+    if (dnsElem.val() != "" && poolStartElem.val() != "" && poolEndElem.val() != "") {
+        if (compareIP(dnsElem.val(), poolStartElem.val()) != -1 && compareIP(dnsElem.val(), poolEndElem.val()) != -1) {
+            dnsElem.removeClass("isValid").addClass("isNotValid");
+            poolStartElem.removeClass("isValid").addClass("isNotValid");
+            poolEndElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-dns", "DNS IP Address can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolStart", "DNS IP Address can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolEnd", "DNS IP Address can't be included into DHCP Pool.", null, null, null);
+            return false;
+        } else {
+            dnsElem.addClass("isValid").removeClass("isNotValid");
+            poolStartElem.addClass("isValid").removeClass("isNotValid");
+            poolEndElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
+}
+
+function compareIpDeviceToNtp(prefix) {
+    var ipDeviceElem = $("#" + prefix + "-ipDevice");
+    var ntpElem = $("#" + prefix + "-ntp");
+    removeQtip("#" + prefix + "-ipDevice");
+    removeQtip("#" + prefix + "-ntp");
+    if (ipDeviceElem.val() != "" && ntpElem.val() != "") {
+        if (ntpElem.val() == ipDeviceElem.val()) {
+            ntpElem.removeClass("isValid").addClass("isNotValid");
+            ipDeviceElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-ipDevice", "Device IP Address and NTP IP Address/Hostname can't be the same.", null, null, null);
+            displayQtip(prefix + "-ntp", "Device IP Address and NTP IP Address/Hostname can't be the same.", null, null, null);
+            return false;
+        } else {
+            ipDeviceElem.addClass("isValid").removeClass("isNotValid");
+            ntpElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
+}
+
+function compareNtpToPool(prefix) {
+    var ntpElem = $("#" + prefix + "-ntp");
+    var poolStartElem = $("#" + prefix + "-poolStart");
+    var poolEndElem = $("#" + prefix + "-poolEnd");
+    removeQtip("#" + prefix + "-ntp");
+    removeQtip("#" + prefix + "-poolStart");
+    removeQtip("#" + prefix + "-poolEnd");
+    if (ntpElem.val() != "" && poolStartElem.val() != "" && poolEndElem.val() != "") {
+        if (compareIP(ntpElem.val(), poolStartElem.val()) != -1 && compareIP(ntpElem.val(), poolEndElem.val()) != 1) {
+            ntpElem.removeClass("isValid").addClass("isNotValid");
+            poolStartElem.removeClass("isValid").addClass("isNotValid");
+            poolEndElem.removeClass("isValid").addClass("isNotValid");
+            displayQtip(prefix + "-nt", "NTP IP Address/Hostname can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolStart", "NTP IP Address/Hostname can't be included into DHCP Pool.", null, null, null);
+            displayQtip(prefix + "-poolEnd", "NTP IP Address/Hostname can't be included into DHCP Pool.", null, null, null);
+            return false;
+        } else {
+            ntpElem.addClass("isValid").removeClass("isNotValid");
+            poolStartElem.addClass("isValid").removeClass("isNotValid");
+            poolEndElem.addClass("isValid").removeClass("isNotValid");
+            return true;
+        }
+    }
+    return true;
+}
+
+
+function changeDevice(prefix, value) {
     var mgt0Elem = $("#" + prefix + "-mgt0");
-    var vlanElem = $("#" + prefix + "-vlanID");
+    var deviceElem = $("#" + prefix + "-dropdown-device");
     var ipDeviceElem = $("#" + prefix + "-ipDevice");
     var netmaskElem = $("#" + prefix + "-netmask");
     var gwDeviceElem = $("#" + prefix + "-gwDevice");
-    var poolStartElem = $("#" + prefix + "-poolStart");
-    var poolEndElem = $("#" + prefix + "-poolEnd");
-    var gwDhcpElem = $("#" + prefix + "-gwDhcp");
-    var dnsElem = $("#" + prefix + "-dns");
-    var ntpElem = $("#" + prefix + "-ntp");
-    var domainElem = $("#" + prefix + "-domain");
-    var saveButton = $("#" + prefix + "-button-next");
 
-    $(".qtip").each(function () {
-        var api = $(this).qtip('api');
-        api.destroy();
+    removeAllQtip(prefix);
+    $("input.dhcp").each(function(){
+        $(this).val('').removeClass("isNotValid").removeClass('isValid');
     });
 
-
-    if (elem == 'device') {
-        var device = deviceList[value];
-        dhcpParam.deviceId = value;
-        if (mgt0Elem.prop("checked")) {
-            deviceElem.html(device.hostname + ' (' + device.ipAddress + ')');
-            vlanElem.val(device.configuration.mgmtVlan);
-            if (device.configuration.ipAddress != "") ipDeviceElem.val(device.configuration.ipAddress);
-            else ipDeviceElem.val(device.ipAddress);
-            if (device.configuration.netmask != "") netmaskElem.val(device.configuration.netmask);
-            if (device.configuration.gateway != "") netmaskElem.val(device.configuration.gateway);
+    var device = deviceList[value];
+    dhcpParam.deviceId = value;
+    dhcpParam.deviceSerial = deviceList[value].serialNumber;
+    if (mgt0Elem.prop("checked")) {
+        deviceElem.html(device.hostname + ' (' + device.ipAddress + ')');
+        if (device.configuration.ipAddress != "") {
+            ipDeviceElem.val(device.configuration.ipAddress);
+            ipDeviceElem.removeClass("isNotValid").addClass('isValid');
+        }
+        else {
+            ipDeviceElem.val(device.ipAddress);
+            ipDeviceElem.removeClass("isNotValid").addClass('isValid');
+        }
+        if (device.configuration.netmask != "") {
+            netmaskElem.val(device.configuration.netmask);
+            netmaskElem.removeClass("isNotValid").addClass('isValid');
+        }
+        if (device.configuration.gateway != "") {
+            gwDeviceElem.val(device.configuration.gateway);
+            gwDeviceElem.removeClass("isNotValid").addClass('isValid');
         }
     }
-    if (vlanElem.val() >= 0 && vlanElem.val() <= 4095) {
-        vlanElem.addClass("isValid").removeClass("isNotValid");
-        dhcpParam.vlanID = vlanElem.val();
-    } else vlanElem.addClass('isNotValid').removeClass('isValid');
+}
 
-    if (validateIP(ipDeviceElem.val())) {
-        ipDeviceElem.addClass("isValid").removeClass("isNotValid");
-        dhcpParam.ipAddress = ipDeviceElem.val();
-    } else ipDeviceElem.addClass('isNotValid').removeClass('isValid');
+function saveButtonState(prefix) {
+    var saveButton = $("#" + prefix + "-button-next");
 
-    if (validateIP(netmaskElem.val())) {
-        netmaskElem.addClass("isValid").removeClass("isNotValid");
-        dhcpParam.netmask = netmaskElem.val();
-    } else netmaskElem.addClass('isNotValid').removeClass('isValid');
-
-    if (dhcpParam.mgt0 && validateIP(gwDeviceElem.val())) {
-        gwDeviceElem.addClass("isValid").removeClass("isNotValid");
-        dhcpParam.gateway = gwDeviceElem.val();
-    } else gwDeviceElem.addClass('isNotValid').removeClass('isValid');
-
-    if (validateIP(poolStartElem.val())) {
-        dhcpParam.poolStart = poolStartElem.val();
-        poolStartElem.addClass("isValid").removeClass("isNotValid");
-    } else poolStartElem.addClass('isNotValid').removeClass('isValid');
-
-    if (validateIP(poolEndElem.val())) {
-        dhcpParam.poolEnd = poolEndElem.val();
-        poolEndElem.addClass("isValid").removeClass("isNotValid");
-    } else poolEndElem.addClass('isNotValid').removeClass('isValid');
-
-    if (validateIP(gwDhcpElem.val()) || ntpElem.val() == "") {
-        gwDhcpElem.addClass("isValid").removeClass("isNotValid");
-        dhcpParam.options.gateway = gwDhcpElem.val();
-    } else gwDhcpElem.addClass('isNotValid').removeClass('isValid');
-
-    if (validateIP(dnsElem.val()) || ntpElem.val() == "") {
-        dnsElem.addClass("isValid").removeClass("isNotValid");
-        dhcpParam.options.dns = dnsElem.val();
-    } else dnsElem.addClass('isNotValid').removeClass('isValid');
-
-    if (validateIP(ntpElem.val()) || validateFQDN(ntpElem.val()) || ntpElem.val() == "") {
-        ntpElem.addClass("isValid").removeClass("isNotValid");
-        dhcpParam.options.ntp = ntpElem.val();
-    } else ntpElem.addClass('isNotValid').removeClass('isValid');
-
-    dhcpParam.options.domain = domainElem.val();
-
-    checkBlock(prefix);
-    checkDhcpInput(prefix);
     if ($(".dhcp.isNotValid").length == 0
         && $(".vlan.isNotValid").length == 0
     ) saveButton.prop("disabled", false);
@@ -323,27 +583,31 @@ function enableDhcp(prefix) {
 }
 
 function changeDhcpInterface(prefix, mgt) {
+    var vlanElem = $("#" + prefix + "-vlanID");
+    var ipDeviceElem = $("#" + prefix + "-ipDevice");
+    var netmaskElem = $("#" + prefix + "-netmask");
+    var gwDeviceElem = $("#" + prefix + "-gwDevice");
+
+    removeAllQtip(prefix);
+    $("input.dhcp").each(function(){
+        $(this).val('').removeClass("isNotValid").removeClass('isValid');
+    });
+
     switch (mgt) {
         case "mgt0":
-            $("#" + prefix + "-vlanID").prop("disabled", true);
-            $("#" + prefix + "-gwDevice").prop("disabled", false);
+            vlanElem.prop("disabled", true);
+            gwDeviceElem.prop("disabled", false);
             if (dhcpParam.deviceId) {
-                if (deviceList[dhcpParam.deviceId].configuration.ipAddress == "") $("#" + prefix + "-ipDevice").val(deviceList[dhcpParam.deviceId].ipAddress);
-                else $("#" + prefix + "-ipDevice").val(deviceList[dhcpParam.deviceId].configuration.ipAddress);
-                $("#" + prefix + "-netmask").val(deviceList[dhcpParam.deviceId].configuration.netmask);
-                $("#" + prefix + "-gwDevice").val(deviceList[dhcpParam.deviceId].configuration.gateway);
-            } else {
-                $("#" + prefix + "-ipDevice").val("");
-                $("#" + prefix + "-netmask").val("");
-                $("#" + prefix + "-gwDevice").val("");
+                if (deviceList[dhcpParam.deviceId].configuration.ipAddress == "") ipDeviceElem.val(deviceList[dhcpParam.deviceId].ipAddress);
+                else ipDeviceElem.val(deviceList[dhcpParam.deviceId].configuration.ipAddress);
+                netmaskElem.val(deviceList[dhcpParam.deviceId].configuration.netmask);
+                gwDeviceElem.val(deviceList[dhcpParam.deviceId].configuration.gateway);
             }
             dhcpParam.mgt0 = true;
             break;
         case "other":
-            $("#" + prefix + "-ipDevice").val("");
-            $("#" + prefix + "-netmask").val("");
-            $("#" + prefix + "-gwDevice").val("").prop("disabled", true).removeClass('isNotValid');
-            $("#" + prefix + "-vlanID").prop("disabled", false);
+            gwDeviceElem.prop("disabled", true).removeClass('isNotValid');
+            vlanElem.prop("disabled", false);
             dhcpParam.mgt0 = false;
             break;
     }
@@ -362,9 +626,28 @@ function saveDhcp(prefix) {
                 deviceList[dhcpParam.deviceId].gateway = dhcpParam.gateway;
             }
 
-            displayCommonParam();
+            displayNetworkParam();
             break;
     }
+}
+
+function resumeDhcpParam(prefix){
+
+    if (dhcpParam.enable) enableDhcp(prefix);
+    if (dhcpParam.deviceId) {
+        if (dhcpParam.deviceSerial == deviceList[dhcpParam.deviceId].serialNumber) changeDevice(prefix, dhcpParam.deviceId);
+    }
+    if (dhcpParam.mgt0) changeDhcpInterface(prefix, 'mgt0');
+    else changeDhcpInterface(prefix, 'other');
+    if (dhcpParam.vlanID) $("#" + prefix + "-vlanID").val(dhcpParam.vlanID);
+    $("#" + prefix + "-ipDevice").val(dhcpParam.ipAddress);
+    $("#" + prefix + "-netmask").val(dhcpParam.netmask);
+    $("#" + prefix + "-poolStart").val(dhcpParam.poolStart);
+    $("#" + prefix + "-poolEnd").val(dhcpParam.poolEnd);
+    $("#" + prefix + "-gwDhcp").val(dhcpParam.options.gateway);
+    $("#" + prefix + "-dns").val(dhcpParam.options.dns);
+    $("#" + prefix + "-ntp").val(dhcpParam.options.ntp);
+    $("#" + prefix + "-domain").val(dhcpParam.options.domain);
 }
 
 function dispalyDhcp(prefix) {
@@ -386,7 +669,7 @@ function dispalyDhcp(prefix) {
         '</button>' +
         '<ul class="dropdown-menu scrollable-menu" aria-labelledby="dLabel">';
     for (var i in deviceList) {
-        if (deviceList[i].selected) htmlString += '<li onclick="dhcpInputChange(\'' + prefix + '\', \'device\', \'' + i + '\')"><a href="#">' + deviceList[i].hostname + ' (' + deviceList[i].ipAddress + ')</a></li>';
+        if (deviceList[i].selected) htmlString += '<li onclick="changeDevice(\'' + prefix + '\', \'' + i + '\')"><a href="#">' + deviceList[i].hostname + ' (' + deviceList[i].ipAddress + ')</a></li>';
     }
     htmlString +=
         '</ul>' +
@@ -402,7 +685,7 @@ function dispalyDhcp(prefix) {
         '</label>' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">VLAN ID:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'vlanID\')" onkeypress="return vlanKeyPress(event)" class="form-control vlan" id="' + prefix + '-vlanID" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkVlan(\'' + prefix + '\')" onkeypress="return vlanKeyPress(event)" class="form-control vlan" id="' + prefix + '-vlanID" disabled="disabled"/>' +
         '</div>' +
         '</div>' +
         '</div>' +
@@ -410,15 +693,15 @@ function dispalyDhcp(prefix) {
         '<div class="dhcp-container">' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon dhcp">IP Address<span style="color: red">*</span>:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'ipDevice\')" onkeypress="return ipKeyPress(event)" class="form-control dhcp" id="' + prefix + '-ipDevice" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkIpDevice(\'' + prefix + '\')" onkeypress="return ipKeyPress(event)" class="form-control dhcp" id="' + prefix + '-ipDevice" disabled="disabled"/>' +
         '</div>' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">Netmask<span style="color: red">*</span>:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'netmask\')" onkeypress="return ipKeyPress(event)" class="form-control dhcp" id="' + prefix + '-netmask" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkNetmask(\'' + prefix + '\')" onkeypress="return ipKeyPress(event)" class="form-control dhcp" id="' + prefix + '-netmask" disabled="disabled"/>' +
         '</div>' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">Gateway<span style="color: red">*</span>:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'gwDevice\')" onkeypress="return ipKeyPress(event)" class="form-control dhcp" id="' + prefix + '-gwDevice" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkGwDevice(\'' + prefix + '\')" onkeypress="return ipKeyPress(event)" class="form-control dhcp" id="' + prefix + '-gwDevice" disabled="disabled"/>' +
         '</div>' +
         '</div>' +
 
@@ -426,11 +709,11 @@ function dispalyDhcp(prefix) {
         '<div class="dhcp-container">' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">Start IP Address<span style="color: red">*</span>:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'poolStart\')" class="form-control dhcp" id="' + prefix + '-poolStart" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkPoolStart(\'' + prefix + '\')" class="form-control dhcp" id="' + prefix + '-poolStart" disabled="disabled"/>' +
         '</div>' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">End IP Address<span style="color: red">*</span>:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'poolEnd\')" class="form-control dhcp" id="' + prefix + '-poolEnd" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkPoolEnd(\'' + prefix + '\')" class="form-control dhcp" id="' + prefix + '-poolEnd" disabled="disabled"/>' +
         '</div>' +
         '</div>' +
 
@@ -438,24 +721,25 @@ function dispalyDhcp(prefix) {
         '<div class="dhcp-container">' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">Default Gateway</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'gwDhcp\')" class="form-control dhcp" id="' + prefix + '-gwDhcp" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkGwDhcp(\'' + prefix + '\')" class="form-control dhcp" id="' + prefix + '-gwDhcp" disabled="disabled"/>' +
         '</div>' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">DNS Server IP:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'dns\')" class="form-control dhcp" id="' + prefix + '-dns" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkDns(\'' + prefix + '\')" class="form-control dhcp" id="' + prefix + '-dns" disabled="disabled"/>' +
         '</div>' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">NTP Server IP:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', (\'ntp\')" class="form-control dhcp" id="' + prefix + '-ntp" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkNtp(\'' + prefix + '\')" class="form-control dhcp" id="' + prefix + '-ntp" disabled="disabled"/>' +
         '</div>' +
         '<div class="input-group dhcp">' +
         '<span class="input-group-addon">Domain Name:</span>' +
-        '<input type="text" onchange="dhcpInputChange(\'' + prefix + '\', \'domain\')" class="form-control dhcp" id="' + prefix + '-domain" disabled="disabled" value="' + commonParam.capwap.http.proxy.host + '"/>' +
+        '<input type="text" onchange="checkDomain(\'' + prefix + '\')" class="form-control dhcp" id="' + prefix + '-domain" disabled="disabled"/>' +
         '</div>' +
         '</div></div>'
     ;
     document.getElementById(prefix + "-window").innerHTML = htmlString;
     document.getElementById(prefix + "-action").innerHTML =
         '<button id="' + prefix + '-button-back" class="back btn btn-default" onclick="displayNetworkParam()">Back</button>' +
-        '<button id="' + prefix + '-button-next" class="next btn btn-default"  onclick="saveDhcp(\'' + prefix + '\')" >Save</button>';
+        '<button id="' + prefix + '-button-next" class="next btn btn-default"  onclick="saveDhcp(\'' + prefix + '\')">Save</button>';
+    resumeDhcpParam(prefix);
 }

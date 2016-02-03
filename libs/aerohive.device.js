@@ -1,4 +1,4 @@
-module.exports = function(ipAddress, valid, hostname, macAddress, serialNumber, deviceType, comment) {
+module.exports = function(ipAddress, valid, hostname, macAddress, serialNumber, deviceType, current, comment) {
     this.ipAddress = ipAddress;
     this.hostname = hostname || "";
     this.isValid = valid;
@@ -12,7 +12,16 @@ module.exports = function(ipAddress, valid, hostname, macAddress, serialNumber, 
         else this.serialNumber = "unknown";
         this.deviceType = deviceType;
         this.selected = false;
-        this.configuration = {
+        this.current = current || {
+            dhcp: true,
+            ipAddress: "",
+            netmask: "",
+            gateway: "",
+            nativeVlan: "",
+            mgmtVlan: ""
+        };
+        this.configuration = current || {
+            dhcp: true,
             ipAddress : "",
             netmask: "",
             gateway: "",
