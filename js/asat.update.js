@@ -1,5 +1,5 @@
 var currentRelease = gui.App.manifest.version;
-var buildDate = "February 4, 2016";
+var buildDate = "July 15th, 2016";
 
 var platform = process.platform;
 if (process.platform == "darwin") platform = "macos";

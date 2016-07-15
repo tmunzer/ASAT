@@ -1,7 +1,7 @@
 {
   "main": "./index.html",
   "name": "ASAT",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "window": {
     "title": "Aerohive Stand Alone Tool",
     "toolbar": true,
