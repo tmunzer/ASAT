@@ -5,10 +5,14 @@
     <title>Aerohive Stand Alone Tool</title>
     <link type="text/css" rel='stylesheet' href='./css/bootstrap.min.css'>
     <link type="text/css" rel="stylesheet" href="./css/font-awesome.min.css">
-    <script type="text/javascript" src='./js/jquery.min.js'></script>
+    <script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    
+    <script type="text/javascript" src='./js/jquery-3.2.1.min.js'></script>
     <script type="text/javascript" src='./js/jquery.qtip.min.js'></script>
     <script type="text/javascript" src='./js/bootstrap.min.js'></script>
     <script type="text/javascript" src='./js/asat.ui.js'></script>
+    <script>if (window.module) module = window.module;</script>
+    
     <link rel="stylesheet" href="./css/asat.css"/>
     <link rel="stylesheet" href="./css/jquery.qtip.min.css"/>
     <link rel="stylesheet" href="./css/ah-styles.min.css"/>
@@ -16,13 +20,11 @@
 <script>
     const EventEmitter = require('events').EventEmitter;
     var messenger = new EventEmitter();
-    var gui = require('nw.gui');
+
 
 </script>
 <body>
-<!-- ============================================ -->
 <!-- ================= HEADER =================== -->
-<!-- ============================================ -->
 <header>
     <!-- Brand and toggle get grouped for better mobile display -->
     <div>
@@ -34,9 +36,7 @@
             </span>
     </div>
 </header>
-<!-- ============================================ -->
 <!-- ==================== NAV =================== -->
-<!-- ============================================ -->
 <nav class="ui-content">
     <div>
         <ul class="nav nav-pills nav-stacked">
@@ -97,12 +97,9 @@
         </ul>
     </div>
 </nav>
-<!-- ============================================ -->
 <!-- =============== SECTIONS =================== -->
-<!-- ============================================ -->
 
-<!-- ============================================ -->
-<!-- ==================== HOME ================== -->
+<!--  HOME  -->
 <section class="main no-console" id="home">
     <article>
         <h2>Aerohive Stand Alone Tool</h2>
@@ -135,8 +132,7 @@
         </div>
     </article>
 </section>
-<!-- ============================================ -->
-<!-- =================== FIREWALL =============== -->
+<!--  FIREWALL  -->
 <section class="main no-console" id="firewall" style="display: none">
     <article>
         <table class="breadcrumb-table firewall">
@@ -172,8 +168,7 @@
     </article>
 
 </section>
-<!-- ============================================ -->
-<!-- =================== DEPLOYMENT ============= -->
+<!--  DEPLOYMENT  -->
 <section class="main no-console" id="depl" style="display: none">
     <article>
         <table class="breadcrumb-table depl">
@@ -215,26 +210,20 @@
     </article>
 
 </section>
-<!-- ============================================ -->
-<!-- =================== SITE SURVEY ============ -->
+<!--  SITE SURVEY  -->
 <section class="main no-console" id="survey" style="display: none">
 
 </section>
 
-<!-- ============================================ -->
-<!-- =================== LICENSE ================ -->
+<!--  LICENSE  -->
 <section class="main no-console" id="license" style="display: none">
 </section>
-<!-- ============================================ -->
-<!-- =================== UPDATES ================ -->
+<!--  UPDATES  -->
 <section class="main no-console" id="update" style="display: none">
 </section>
-<!-- ============================================ -->
 <!-- =================== FOOTER ================= -->
-<!-- ============================================ -->
 
-<!-- ============================================ -->
-<!-- =================== CONSOLE ================ -->
+<!--  CONSOLE  -->
 <footer id="console-footer" class="no-console">
     <a href="#" id="console-button">
         <i id="fa-console" class="fa fa-angle-down fa-lg"></i>
@@ -259,20 +248,15 @@
         }
     })
 </script>
-<!-- ============================================ -->
 <!-- ================= JAVASCRIPT =============== -->
-<!-- ============================================ -->
 <script type="text/javascript" src='js/asat.dhcp.js'></script>
 
-<!-- ============================================ -->
-<!-- ================= LICENSE ================== -->
+<!--  LICENSE  -->
 <script type="text/javascript" src='js/asat.license.js'></script>
-<!-- ============================================ -->
-<!-- ================= UPDATE =================== -->
+<!--  UPDATE  -->
 <script type="text/javascript" src='js/asat.update.js'></script>
 
-<!-- ============================================ -->
-<!-- ================= FIREWALL ================= -->
+<!--  FIREWALL  -->
 <script type="text/javascript" src='libs/net.udp.js'></script>
 <script type="text/javascript" src='libs/net.tcp.js'></script>
 <script type="text/javascript" src='libs/net.http.code.js'></script>
@@ -280,15 +264,12 @@
 <script type="text/javascript" src='libs/net.https.js'></script>
 <script type="text/javascript" src='js/asat.firewall.js'></script>
 
-<!-- ============================================ -->
-<!-- ================= DEPLOYMENT =============== -->
+<!--  DEPLOYMENT  -->
 <script type="text/javascript" src='js/asat.deployment.js'></script>
 
-<!-- ============================================ -->
 <!-- ================= DEPLOYMENT =============== -->
 <script type="text/javascript" src='js/asat.survey.js'></script>
-<!-- ============================================ -->
-<!-- ==================== MAIN ================== -->
+<!--  MAIN  -->
 <script>
     function main(tab) {
         $(".main").hide();

@@ -1,24 +1,20 @@
-var db = require("./libs/sqlite.main");
-
-var Netmask = require("netmask").Netmask;
-
-
-var Discover = require("./libs/deployment.discover");
-var Deploy = require("./libs/deployment.deploy");
-var Device = require('./libs/aerohive.device');
+const Netmask = require("netmask").Netmask;
+const Discover = require("./libs/deployment.discover");
+const Deploy = require("./libs/deployment.deploy");
+const Device = require('./libs/aerohive.device');
 
 
-var credentials = {
+let credentials = {
     login: "admin",
     password: "aerohive"
 };
 
-var network = null;
-var deviceList = [];
-var countryList = {};
-var htmlString = "";
+let network = null;
+let deviceList = [];
+let countryList = {};
+let htmlString = "";
 
-var commonParam = {
+let commonParam = {
     region: {
         enable: false,
         value: "World"
@@ -72,15 +68,17 @@ var commonParam = {
 
 function initDeployment() {
     if (network == null) {
-        var os = require('os');
-        var interfaces = os.networkInterfaces();
-        var addresses = [];
-        for (var k in interfaces) {
-            for (var k2 in interfaces[k]) {
-                var address = interfaces[k][k2];
+        const os = require('os');
+        const interfaces = os.networkInterfaces();
+        let addresses = [];
+        for (let k in interfaces) {
+            for (let k2 in interfaces[k]) {
+                const address = interfaces[k][k2];
                 if (address.family === 'IPv4' && !address.internal) {
-                    var cidr = address.address + "/" + address.netmask;
-                    var block = new Netmask(cidr);
+                    const cidr = address.address + "/" + address.netmask;
+                    console.log(cidr)
+                    console.log(typeof Netmask);
+                    const block = new Netmask(cidr);
                     addresses.push(block.base + "/" + block.bitmask);
                 }
             }

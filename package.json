@@ -1,18 +1,12 @@
 {
-  "main": "./index.html",
-  "name": "ASAT",
-  "version": "0.2.7",
-  "window": {
-    "title": "Aerohive Stand Alone Tool",
-    "toolbar": true,
-    "width": 1000,
-    "height": 600,
-    "resizable": true,
-    "icon": "./images/aerohive_icon.gif"
+  "main": "./main.js",
+  "name": "aerohive_standalone_tool",
+  "version": "0.3.0",
+  "scripts": {
+    "start": "electron ."
   },
   "dependencies": {
-    "sqlite3": "~3.1.1",
-    "netmask": "1.0.5",
+    "netmask": "~1",
     "events": "1.1.0",
     "ssh2": "0.4.13"
   }
